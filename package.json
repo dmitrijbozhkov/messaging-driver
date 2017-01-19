@@ -21,11 +21,6 @@
     "web workers"
   ],
   "author": "Dmitrij Bozhkov",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/cyclejs-community/typescript-starter-cycle/issues"
-  },
-  "homepage": "https://github.com/cyclejs-community/typescript-starter-cycle",
   "dependencies": {
     "xstream": "^5.2.0"
   },
