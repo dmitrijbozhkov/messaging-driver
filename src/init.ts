@@ -1,3 +1,5 @@
 import xs from "xstream";
 
-console.log("kek");
+export function kek(): void {
+    console.log("kek");
+}
