@@ -2,7 +2,6 @@
     "compilerOptions": {
         "target": "es5",
         "module": "commonjs",
-        "sourceMap": true,
         "rootDir": "./tests/src",
         "outDir": "./tests/app",
         "moduleResolution": "node"
