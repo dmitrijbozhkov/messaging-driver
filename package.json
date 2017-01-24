@@ -1,8 +1,8 @@
 {
   "name": "messaging-driver",
   "version": "1.0.0",
-  "description": "A simple project for getting started with TypeScript in cycle.js, using Webpack",
-  "main": "index.js",
+  "description": "",
+  "main": "./lib/init.js",
   "scripts": {
     "watch-lib": "tsc -p app.tsconfig.json --watch",
     "watch-test": "webpack --cache --display-error-details --watch",

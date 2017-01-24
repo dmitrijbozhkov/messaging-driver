@@ -1,35 +1,5 @@
-export interface IEnvelope {
-    type: string; // operation type
-    name: string; // operation name
-    category?: string; // specify if message is data, progress message or cancellation token
-}
-export interface IDataEnvelope extends IEnvelope {
-    progress?: boolean; // give progress callback to responder
-    cancel?: boolean; // give cancellation token to responder
-}
-export interface IMessage {
-    data: any; // data passed
-    progress?: (percent: number, status: string,  message: string) => void; // progress callback
-}
-export interface IBrokerMessage {
-    envelope: IEnvelope | IDataEnvelope;
-    message: IMessage;
-}
-export class WrongMssageTypeError extends Error {}
-export enum MessagingTypes {
-    promise,
-    request,
-    response,
-    publish,
-    subscribe
-}
-export enum MessagingCategories {
-    message,
-    progress,
-    cancel,
-    error
-}
-export class WorkerBroker {
+import {IBrokerMessage, MessagingTypes, MessagingCategories, IMessageBroker} from "./AbstractBroker";
+export class WorkerBroker implements IMessageBroker {
     private worker: Worker;
     constructor(worker: Worker) {
         this.worker = worker;
@@ -61,29 +31,25 @@ export class WorkerBroker {
             }
         }
     }
-    private checkIsChannel(type: string) {
-        return type === MessagingTypes[3] || type === MessagingTypes[4];
-    }
     private checkIsMessage(type: string) {
         return type === MessagingTypes[0] || type === MessagingTypes[1] || type === MessagingTypes[2];
     }
     public makeMessage(message: IBrokerMessage) {
-        if (this.checkIsChannel(message.envelope.type)) {
-            throw new WrongMssageTypeError("Specified message is not a promise");
-        }
-        else if (this.checkIsMessage(message.envelope.type)) {
-            this.worker.postMessage(message);
+        if (this.checkIsMessage(message.envelope.type)) {
+            if (message.envelope.bare) {
+                this.worker.postMessage(message.message.data as any);
+            } else {
+                this.worker.postMessage(message);
+            }
         } else {
-            throw new WrongMssageTypeError("Wrong message type");
+            throw new Error("Wrong message type");
         }
     }
     public makePublish(message: IBrokerMessage, port: MessagePort) {
-        if (this.checkIsChannel(message.envelope.type)) {
+        if (message.envelope.type === MessagingTypes[3]) {
             this.worker.postMessage(message, port);
-        } else if (this.checkIsMessage(message.envelope.type)) {
-            throw new WrongMssageTypeError("Specified message is not publish");
         } else {
-            throw new WrongMssageTypeError("Wrong message type");
+            throw new Error("Wrong message type");
         }
     }
     public onprogress: (progress: IBrokerMessage) => void;
