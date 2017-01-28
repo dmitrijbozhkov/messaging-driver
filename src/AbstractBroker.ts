@@ -5,29 +5,42 @@ export interface IEnvelope {
     name: string; // operation name
     category?: string; // specify if message is data, progress message or cancellation token
     bare?: boolean; // post only data
-    progress?: boolean; // give progress callback to responder
-    cancel?: boolean; // give cancellation token to responder
 }
-export type CancelCallback = (message: any) => void;
-export type ProgressCallback = (progress: number, status: string,  message: string) => void;
+export type CancelCallback = (data: any) => void;
+export type ProgressCallback = (progress: number, status: string,  data: any) => void;
 export interface IBrokerMessage {
     envelope: IEnvelope;
-    message: any;
-    callback?: ProgressCallback | CancelCallback;
+    data: any;
+}
+export interface IProgressMessage extends IBrokerMessage {
+    progress: ProgressCallback;
+}
+export interface ICancelMessage extends IBrokerMessage {
+    cancel: CancelCallback;
+}
+export interface IPublishMessage extends IBrokerMessage {
+    port: MessagePort;
 }
 export enum MessagingTypes {
-    promise,
-    request,
-    response,
+    message,
     publish,
-    subscribe,
-    deadletter
+    subscribe
 }
 export enum MessagingCategories {
-    message,
+    data,
     progress,
     cancel,
-    error
+    error,
+    progressCallback,
+    cancelCallback
+}
+export interface IMessageTarget {
+    makeMessage: (message: IBrokerMessage) => void;
+    makePublish: (publish: IPublishMessage) => void;
+    onmessage: (message: IBrokerMessage) => void;
+    onpublish: (publish: IPublishMessage) => void;
+    ondeadletter: (letter: MessageEvent) => void;
+    onerror: (error: ErrorEvent) => void;
 }
 export abstract class AbstractMessageProducer<T> implements Producer<T> {
     public abstract start: (listeners: Listener<T>) => void;
@@ -35,6 +48,5 @@ export abstract class AbstractMessageProducer<T> implements Producer<T> {
     public abstract stop: () => void;
 }
 export interface IMessageBroker {
-    makeSubscribe: (message: IBrokerMessage, port: MessagePort) => void;
     producerFactory: (method: string, name: string) => AbstractMessageProducer<any>;
 }

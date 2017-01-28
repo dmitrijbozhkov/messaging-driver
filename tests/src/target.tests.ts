@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import {WorkerTarget} from "../../lib/MessageTargets";
 import {WorkerMock, MessageEventMock, ErrorEventMock} from "../../lib/WorkerMock";
-import {IBrokerMessage, MessagingTypes, MessagingCategories} from "../../lib/AbstractBroker";
+import {IBrokerMessage, MessagingTypes, MessagingCategories, IPublishMessage} from "../../lib/AbstractBroker";
 describe("WorkerTarget tests", () => {
     let worker: WorkerMock;
     let workerTarget: WorkerTarget;
@@ -10,21 +10,90 @@ describe("WorkerTarget tests", () => {
         worker = new WorkerMock("path");
         workerTarget = new WorkerTarget(worker);
     });
-    it("WorkerTarget.onmessage() should be called when woker posts message", () => {
+    it("WorkerTarget.onmessage() should be called when woker posts message with type message", () => {
          let message: IBrokerMessage = {
             envelope: {
                 type: MessagingTypes[0],
                 name: "TestPromise",
-                category: MessagingCategories[0],
-                progress: false,
-                cancel: false
+                category: MessagingCategories[0]
             },
-            message: {
-                data: data
+            data: data
+        };
+        let evt = new MessageEventMock("message", {data: message});
+        workerTarget.onmessage = (message: IBrokerMessage) => assert.deepEqual(message.data, data);
+        worker.dispatchEvent(evt as any);
+    });
+    it("WorkerTarget.onpublish() should be called when worker message has publish type", () => {
+        let message: IBrokerMessage = {
+            envelope: {
+                type: MessagingTypes[1],
+                name: "TestPromise",
+                category: MessagingCategories[0]
+            },
+            data: data
+        };
+        let port = new MessageChannel().port1;
+        let evt = new MessageEventMock("message", {data: message, ports: [port]});
+        workerTarget.onpublish = (message: IPublishMessage) => {
+            assert.deepEqual(message.data, data);
+            assert.deepEqual(message.port, port);
+        };
+        worker.dispatchEvent(evt as any);
+    });
+    it("Message without envelope should go to the ondeadletter", () => {
+        let message = {
+            data: data
+        };
+        let evt = new MessageEventMock("message", {data: message});
+        workerTarget.ondeadletter = (letter: MessageEvent) => assert.deepEqual(letter.data.data, message.data);
+        worker.dispatchEvent(evt as any);
+    });
+    it("Message without data should go to the ondeadletter", () => {
+        let message = {
+            envelope: {
+                type: MessagingTypes[1],
+                name: "TestPromise",
+                category: MessagingCategories[0]
             }
         };
         let evt = new MessageEventMock("message", {data: message});
-        workerTarget.onmessage = (message: MessageEvent) => assert.deepEqual(message.data.message.data, data);
+        workerTarget.ondeadletter = (letter: MessageEvent) => assert.deepEqual(letter.data.envelope, message.envelope);
+        worker.dispatchEvent(evt as any);
+    });
+    it("Message without envelope.type should go to ondeadletter", () => {
+        let message = {
+            envelope: {
+                name: "TestPromise",
+                category: MessagingCategories[0]
+            },
+            data: "data"
+        };
+        let evt = new MessageEventMock("message", {data: message});
+        workerTarget.ondeadletter = (letter: MessageEvent) => assert.deepEqual(letter.data.data, message.data);
+        worker.dispatchEvent(evt as any);
+    });
+    it("Message without envelope.name should go to the ondeadletter", () => {
+        let message = {
+            envelope: {
+                type: MessagingTypes[1],
+                category: MessagingCategories[0]
+            },
+            data: "data"
+        };
+        let evt = new MessageEventMock("message", {data: message});
+        workerTarget.ondeadletter = (letter: MessageEvent) => assert.deepEqual(letter.data.data, message.data);
+        worker.dispatchEvent(evt as any);
+    });
+    it("Message without envelope.category should go to onmessage", () => {
+        let message = {
+            envelope: {
+                type: MessagingTypes[1],
+                name: "TestPromise"
+            },
+            data: "data"
+        };
+        let evt = new MessageEventMock("message", {data: message});
+        workerTarget.ondeadletter = (letter: MessageEvent) => assert.deepEqual(letter.data.data, message.data);
         worker.dispatchEvent(evt as any);
     });
     it("WorkerTarget.onerror() should be called when error in worker occurred", () => {
@@ -45,65 +114,101 @@ describe("WorkerTarget tests", () => {
         worker.dispatchEvent(evt as any);
     });
     it("WorkerTarget.makeMessage() should post message to worker", () => {
-        worker.onposted = (e: any) => assert.deepEqual(e.data, data);
+        worker.onposted = (e: any) => assert.deepEqual(e.data.data, data);
         let message: IBrokerMessage = {
             envelope: {
                 type: MessagingTypes[0],
-                name: "TestPromise",
-                bare: true
+                name: "TestPromise"
             },
-            message: {
-                data: data
-            }
+            data: data
         };
         workerTarget.makeMessage(message);
     });
     it("WorkerTarget.makeMessage() should throw exception if publish type specified", () => {
         let message: IBrokerMessage = {
             envelope: {
-                type: MessagingTypes[3],
-                name: "TestPromise",
-                bare: true
+                type: MessagingTypes[1],
+                name: "TestPromise"
             },
-            message: {
-                data: data
-            }
+            data: data
         };
         assert.throws(() => {
             workerTarget.makeMessage(message);
         });
     });
-    it("WorkerTarget.makePublish() should post publish to worker", () => {
+    it("WorkerTarget.makeMessage() should throw exception if subscribe type specified", () => {
         let message: IBrokerMessage = {
             envelope: {
-                type: MessagingTypes[3],
-                name: "TestRequest",
-                category: MessagingCategories[0],
-                progress: false,
-                cancel: false
+                type: MessagingTypes[2],
+                name: "TestPromise"
             },
-            message: {
-                data: data
-            }
+            data: data
         };
-        worker.onposted = (e: MessageEvent, ports: MessagePort[]) => assert.deepEqual(e.data.message.data, data);
-        workerTarget.makePublish(message, "kek" as any);
+        assert.throws(() => {
+            workerTarget.makeMessage(message);
+        });
     });
-    it("WorkerTarget.makePublish() should throw exception if promise, request or response", () => {
+    it("WorkerTarget.makeMessage() should post all that is in message.data if bare is true", () => {
         let message: IBrokerMessage = {
             envelope: {
                 type: MessagingTypes[0],
-                name: "TestRequest",
+                name: "TestPromise",
                 category: MessagingCategories[0],
-                progress: false,
-                cancel: false
+                bare: true
             },
-            message: {
-                data: data
-            }
+            data: data
+        };
+        worker.onposted = (message) => assert.deepEqual(message.data, data);
+        workerTarget.makeMessage(message);
+    });
+    it("WorkerTarget.makePublish() should post publish to worker", () => {
+        let port = new MessageChannel().port1;
+        let message: IPublishMessage = {
+            envelope: {
+                type: MessagingTypes[1],
+                name: "TestRequest",
+                category: MessagingCategories[0]
+            },
+            data: data,
+            port: port
+        };
+        worker.onposted = (e: MessageEvent, ports) => {
+            assert.deepEqual(e.data.data, data);
+            assert.deepEqual(ports[0], port);
+        };
+        workerTarget.makePublish(message);
+    });
+    it("WorkerTarget.makePublish() should post all that is in message.data and add port to ports if bare is true", () => {
+        let port = new MessageChannel().port1;
+        let message: IPublishMessage = {
+            envelope: {
+                type: MessagingTypes[1],
+                name: "TestPromise",
+                category: MessagingCategories[0],
+                bare: true
+            },
+            data: data,
+            port: port
+        };
+        worker.onposted = (e: MessageEvent, ports: MessagePort[]) => {
+            assert.deepEqual(e.data, data);
+            assert.deepEqual(ports[0], port);
+        };
+        workerTarget.makePublish(message);
+    });
+    it("WorkerTarget.makePublish() should throw exception if envelope.type equal to message", () => {
+        let port = new MessageChannel().port1;
+        let message: IPublishMessage = {
+            envelope: {
+                type: MessagingTypes[0],
+                name: "TestRequest",
+                category: MessagingCategories[0]
+            },
+            data: data,
+            port: port
         };
         assert.throws(() => {
-            workerTarget.makePublish(message, "kek" as any);
+            workerTarget.makePublish(message);
         });
     });
 });

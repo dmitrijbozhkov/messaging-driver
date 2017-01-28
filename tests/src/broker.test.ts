@@ -19,13 +19,9 @@ describe("MessageBroker.selfRouter() tests", () => {
             envelope: {
                 type: MessagingTypes[0],
                 name: "task",
-                category: MessagingCategories[0],
-                progress: false,
-                cancel: false
+                category: MessagingCategories[0]
             },
-            message: {
-                data: "data"
-            }
+            data: "data"
         };
     });
     it("producerFactory() should reurn NotifyProducer", () => {
@@ -36,7 +32,7 @@ describe("MessageBroker.selfRouter() tests", () => {
         let evt = new MessageEventMock("message", {data: message});
         let producer = broker.producerFactory(MessagingTypes[0], "task");
         let event$ = Stream.create(producer).addListener({
-            next: (letter: IBrokerMessage) => { assert.deepEqual(letter.message.data, "data"); },
+            next: (letter: IBrokerMessage) => { assert.deepEqual(letter.data, "data"); },
             complete: () => {},
             error: () => {}
         });
