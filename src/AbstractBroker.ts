@@ -1,3 +1,4 @@
+import {Listener, Producer} from "xstream";
 export interface IEnvelope {
     target?: string; // broker name
     type: string; // messaging type
@@ -7,20 +8,20 @@ export interface IEnvelope {
     progress?: boolean; // give progress callback to responder
     cancel?: boolean; // give cancellation token to responder
 }
-export interface IMessage {
-    data: any; // data passed
-    progress?: (percent: number, status: string,  message: string) => void; // progress callback
-}
+export type CancelCallback = (message: any) => void;
+export type ProgressCallback = (progress: number, status: string,  message: string) => void;
 export interface IBrokerMessage {
     envelope: IEnvelope;
-    message: IMessage;
+    message: any;
+    callback?: ProgressCallback | CancelCallback;
 }
 export enum MessagingTypes {
     promise,
     request,
     response,
     publish,
-    subscribe
+    subscribe,
+    deadletter
 }
 export enum MessagingCategories {
     message,
@@ -28,12 +29,12 @@ export enum MessagingCategories {
     cancel,
     error
 }
+export abstract class AbstractMessageProducer<T> implements Producer<T> {
+    public abstract start: (listeners: Listener<T>) => void;
+    public abstract trigger: (message: T) => void;
+    public abstract stop: () => void;
+}
 export interface IMessageBroker {
-    makeMessage: (message: IBrokerMessage) => void;
-    makePublish: (message: IBrokerMessage, port: MessagePort) => void;
-    onprogress: (progress: IBrokerMessage) => void;
-    onmessage: (message: IBrokerMessage, ports?: MessagePort[]) => void;
-    oncancel: (token: IBrokerMessage) => void;
-    onerror: (error: ErrorEvent) => void;
-    ondeadletter: (letter: any, ports: MessagePort[]) => void;
+    makeSubscribe: (message: IBrokerMessage, port: MessagePort) => void;
+    producerFactory: (method: string, name: string) => AbstractMessageProducer<any>;
 }

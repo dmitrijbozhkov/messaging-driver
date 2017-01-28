@@ -1,8 +1,53 @@
 import * as assert from "assert";
 import {IBrokerMessage, MessagingTypes, MessagingCategories} from "../../lib/AbstractBroker";
-import {WorkerBroker} from "../../lib/MessageBrokers";
+import {MessageBroker, NotifyProducer} from "../../lib/MessageBroker";
 import {WorkerMock, MessageEventMock, ErrorEventMock} from "../../lib/WorkerMock";
+import {WorkerTarget} from "../../lib/MessageTargets";
+import {Stream} from "xstream";
 
+
+describe("MessageBroker.selfRouter() tests", () => {
+    let worker: WorkerMock;
+    let workerTarget: WorkerTarget;
+    let broker: MessageBroker;
+    let message: IBrokerMessage;
+    beforeEach(() => {
+        worker = new WorkerMock("path");
+        workerTarget = new WorkerTarget(worker);
+        broker = new MessageBroker(workerTarget);
+        message = {
+            envelope: {
+                type: MessagingTypes[0],
+                name: "task",
+                category: MessagingCategories[0],
+                progress: false,
+                cancel: false
+            },
+            message: {
+                data: "data"
+            }
+        };
+    });
+    it("producerFactory() should reurn NotifyProducer", () => {
+        let producer = broker.producerFactory(MessagingTypes[0], "task");
+        assert.deepEqual(producer instanceof NotifyProducer, true);
+    });
+    it("Messages with promise type and 'task' name should be routed to promise producers with name 'task' ", () => {
+        let evt = new MessageEventMock("message", {data: message});
+        let producer = broker.producerFactory(MessagingTypes[0], "task");
+        let event$ = Stream.create(producer).addListener({
+            next: (letter: IBrokerMessage) => { assert.deepEqual(letter.message.data, "data"); },
+            complete: () => {},
+            error: () => {}
+        });
+        worker.dispatchEvent(evt as any);
+    });
+});
+describe("MessageBroker.makeSubscribe() tests", () => {
+});
+describe("MessageBroker.producerFactory() tests", () => {
+});
+/*
 describe("Broker tests", () => {
     let worker: WorkerMock;
     let broker: WorkerBroker;
@@ -257,3 +302,4 @@ describe("Broker tests", () => {
         worker.dispatchEvent(errEvent as any);
     });
 });
+*/
