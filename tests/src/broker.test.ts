@@ -1,20 +1,23 @@
 import * as assert from "assert";
-import {IBrokerMessage, MessagingTypes, MessagingCategories} from "../../lib/AbstractBroker";
+import {IBrokerMessage, MessagingTypes, MessagingCategories, IPublishMessage, IProgressMessage, ICancelMessage, IRoutedMessage} from "../../lib/AbstractBroker";
 import {MessageBroker, NotifyProducer} from "../../lib/MessageBroker";
 import {WorkerMock, MessageEventMock, ErrorEventMock} from "../../lib/WorkerMock";
-import {WorkerTarget} from "../../lib/MessageTargets";
+import {WorkerTarget, TargetRoute} from "../../lib/MessageTargets";
 import {Stream} from "xstream";
 
 
-describe("MessageBroker.selfRouter() tests", () => {
+describe("MessageBroker tests", () => {
     let worker: WorkerMock;
+    let router: TargetRoute;
     let workerTarget: WorkerTarget;
     let broker: MessageBroker;
     let message: IBrokerMessage;
     beforeEach(() => {
         worker = new WorkerMock("path");
-        workerTarget = new WorkerTarget(worker);
-        broker = new MessageBroker(workerTarget);
+        router = new TargetRoute();
+        workerTarget = new WorkerTarget(worker, router);
+        broker = new MessageBroker();
+        broker.attachTarget(workerTarget);
         message = {
             envelope: {
                 type: MessagingTypes[0],
@@ -25,12 +28,14 @@ describe("MessageBroker.selfRouter() tests", () => {
         };
     });
     it("producerFactory() should reurn NotifyProducer", () => {
-        let producer = broker.producerFactory(MessagingTypes[0], "task");
+        let notify = new NotifyProducer<IBrokerMessage>();
+        let producer = broker.attachMessage(notify, "task");
         assert.deepEqual(producer instanceof NotifyProducer, true);
     });
-    it("Messages with promise type and 'task' name should be routed to promise producers with name 'task' ", () => {
+    it("Messages with message type and 'task' name should be routed to message producers with name 'task' ", () => {
         let evt = new MessageEventMock("message", {data: message});
-        let producer = broker.producerFactory(MessagingTypes[0], "task");
+        let notify = new NotifyProducer<IBrokerMessage>();
+        let producer = broker.attachMessage(notify, "task");
         let event$ = Stream.create(producer).addListener({
             next: (letter: IBrokerMessage) => { assert.deepEqual(letter.data, "data"); },
             complete: () => {},
@@ -38,255 +43,19 @@ describe("MessageBroker.selfRouter() tests", () => {
         });
         worker.dispatchEvent(evt as any);
     });
-});
-describe("MessageBroker.makeSubscribe() tests", () => {
-});
-describe("MessageBroker.producerFactory() tests", () => {
-});
-/*
-describe("Broker tests", () => {
-    let worker: WorkerMock;
-    let broker: WorkerBroker;
-    let data = "data";
-    beforeEach(() => {
-        worker = new WorkerMock("path");
-        broker = new WorkerBroker(worker);
-    });
-    it("WorkerBroker.makeMessage() should send promises", () => {
-        worker.onposted = (e: MessageEvent) => {
-            assert.deepEqual(e.data.message.data, data);
-        };
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: "TestPromise"
-            },
-            message: {
-                data: data
-            }
-        };
-        broker.makeMessage(message);
-    });
-    it("WorkerBroker.makeMessaage() should make bare requests", () => {
-        let data = "bare";
-        worker.onposted = (e: any) => assert.deepEqual(e.data, data);
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: "TestPromise",
-                bare: true
-            },
-            message: {
-                data: data
-            }
-        };
-        broker.makeMessage(message);
-    });
-    it("WorerBroker.makeMessage() should send requests", () => {
-        worker.onposted = (e: MessageEvent) => assert.deepEqual(e.data.message.data, data);
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: "TestPromise"
-            },
-            message: {
-                data: data
-            }
-        };
-        broker.makeMessage(message);
-    });
-    it("WorkerBroker.makeMessage() should throw exception if type is publish", () => {
-        worker.onposted = (e: MessageEvent) => {};
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[3],
-                name: "TestPromise",
-                progress: false,
-                cancel: false
-            },
-            message: {
-                data: data
-            }
-        };
-        assert.throws(() => {
-            broker.makeMessage(message);
-        });
-    });
-    it("WorkerBroker.makeMessage() should throw exception if type is subscribe", () => {
-        worker.onposted = (e: MessageEvent) => {};
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[4],
-                name: "TestPromise",
-                progress: false,
-                cancel: false
-            },
-            message: {
-                data: data
-            }
-        };
-        assert.throws(() => {
-            broker.makeMessage(message);
-        });
-    });
-    it("WorkerBroker.makeMessage() should throw exception if type is not one of MessagingTypes", () => {
-        worker.onposted = (e: MessageEvent) => {};
-        let message: IBrokerMessage = {
-            envelope: {
-                type: "stuff",
-                name: "TestPromise",
-                progress: false,
-                cancel: false
-            },
-            message: {
-                data: data
-            }
-        };
-        assert.throws(() => {
-            broker.makeMessage(message);
-        });
-    });
-    it("WorkerBroker.makePublish() should make publish message", () => {
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[3],
-                name: "TestRequest",
-                category: MessagingCategories[0],
-                progress: false,
-                cancel: false
-            },
-            message: {
-                data: data
-            }
-        };
-        worker.onposted = (e: MessageEvent, ports: MessagePort[]) => assert.deepEqual(e.data.message.data, data);
-        broker.makePublish(message, "kek" as any);
-    });
-    it("WorkerBroker.makePublish() should make subscribe message", () => {
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[4],
-                name: "TestRequest",
-                category: MessagingCategories[0],
-                progress: false,
-                cancel: false
-            },
-            message: {
-                data: data
-            }
-        };
-        // worker.onposted = (e: MessageEvent, ports: MessagePort[]) => assert.deepEqual(e.data.message.data, data);
-        assert.throws(() => {
-            broker.makePublish(message, "kek" as any);
-        });
-    });
-    it("WorkerBroker.makePublish() should throw exception if type is not one of MessagingTypes", () => {
-        worker.onposted = (e: MessageEvent) => {};
-        let message: IBrokerMessage = {
-            envelope: {
-                type: "stuff",
-                name: "TestPromise",
-                progress: false,
-                cancel: false
-            },
-            message: {
-                data: data
-            }
-        };
-        assert.throws(() => {
-            broker.makePublish(message, "kek" as any);
-        });
-    });
-    it("WorkerBroker should route messages with message category to onmessage", () => {
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: "TestPromise",
-                category: MessagingCategories[0],
-                progress: false,
-                cancel: false
-            },
-            message: {
-                data: data
-            }
-        };
+    it("Dead letters should trigger all deadletter producers", () => {
+        delete message.envelope;
         let evt = new MessageEventMock("message", {data: message});
-        broker.onmessage = (message: IBrokerMessage, ports: MessagePort[]) => assert.deepEqual(message.message.data, data);
+        let notify = new NotifyProducer<MessageEvent>();
+        let producer = broker.attachDeadLetter(notify);
+        let event$ = Stream.create(producer).addListener({
+            next: (letter: MessageEvent) => { assert.deepEqual(letter.data.data, "data"); },
+            complete: () => {},
+            error: () => {}
+        });
         worker.dispatchEvent(evt as any);
     });
-    it("WorkerBroker should route messages with progress category to onprogress", () => {
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: "TestPromise",
-                category: MessagingCategories[1],
-                progress: true,
-                cancel: false
-            },
-            message: {
-                data: data
-            }
-        };
-        let evt = new MessageEventMock("message", {data: message});
-        broker.onprogress = (message: IBrokerMessage) => assert.deepEqual(message.message.data, data);
-        worker.dispatchEvent(evt as any);
-    });
-    it("WorkerBroker should route messages with cancel category to oncancel", () => {
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: "TestPromise",
-                category: MessagingCategories[2],
-                progress: false,
-                cancel: true
-            },
-            message: {
-                data: data
-            }
-        };
-        let evt = new MessageEventMock("message", {data: message});
-        broker.oncancel = (message: IBrokerMessage) => assert.deepEqual(message.message.data, data);
-        worker.dispatchEvent(evt as any);
-    });
-    it("WorkerBroker should route messages without category to onmessage", () => {
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: "TestPromise"
-            },
-            message: {
-                data: data
-            }
-        };
-        let evt = new MessageEventMock("message", {data: message});
-        broker.onmessage = (message: IBrokerMessage) => assert.deepEqual(message.message.data, data);
-        worker.dispatchEvent(evt as any);
-    });
-    it("WorkerBroker should call ondeadletter if message does not implement IBrokerMessage interfacce", () => {
-        let message: any = {
-            stuff: "something"
-        };
-        let evt = new MessageEventMock("message", {data: message});
-        broker.ondeadletter = (letter: any) => assert.deepEqual(letter.stuff, message.stuff);
-        worker.dispatchEvent(evt as any);
-    });
-    it("WorkerBroker should call ondeadletter if message category is not one of MessagingCategories", () => {
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: "TestPromise",
-                category: "wrong"
-            },
-            message: {
-                data: data
-            }
-        };
-        let channel = new MessageChannel();
-        let evt = new MessageEventMock("message", {data: message, ports: [channel.port1]});
-        broker.ondeadletter = (letter: any, ports: MessagePort[]) => assert.deepEqual(ports[0], channel.port1);
-        worker.dispatchEvent(evt as any);
-    });
-    it("WorkerBroker should call onerror if error in worker occurred", () => {
+    it("Errors should trigger all error error producers", () => {
         let errEvent: ErrorEventMock = {
             message: "TypeError",
             filename: "index.js",
@@ -294,8 +63,178 @@ describe("Broker tests", () => {
             colno: 18,
             type: "error"
         };
-        broker.onerror = (e: ErrorEvent) => assert.deepEqual(e.message, errEvent.message);
+        let notify = new NotifyProducer<ErrorEvent>();
+        let producer = broker.attachError(notify);
+        let event$ = Stream.create(producer).addListener({
+            next: (err: ErrorEvent) => { assert.deepEqual(err.filename, errEvent.filename); },
+            complete: () => {},
+            error: () => {}
+        });
         worker.dispatchEvent(errEvent as any);
     });
+    it("subscribeHandler() should return MessageBroker that on attachMessage() returns producer that triggers on every message published by MessagePort with name 'test'", () => {
+        let channel = new MessageChannel();
+        let name = "test";
+        let publishMessage: IBrokerMessage = {
+            envelope: {
+                type: MessagingTypes[1],
+                name: name,
+                category: MessagingCategories[0]
+            },
+            data: "data"
+        };
+        let subscription = broker.subscribeHandler(name);
+        let notify = new NotifyProducer<IBrokerMessage>();
+        let producer = subscription.attachMessage(notify, "task");
+        let event$ = Stream.create(producer).addListener({
+            next: (m: IBrokerMessage) => { assert.deepEqual(m.data, message.data); },
+            complete: () => {},
+            error: () => {}
+        });
+        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
+        worker.dispatchEvent(evt as any);
+        channel.port2.postMessage(message);
+    });
+    it("subscribeHandler() should return MessageBroker that on attachDeadLetter() returns producer that triggers on every bad message published by MessagePort", () => {
+        let channel = new MessageChannel();
+        let name = "test";
+        delete message.envelope;
+        let publishMessage: IBrokerMessage = {
+            envelope: {
+                type: MessagingTypes[1],
+                name: name,
+                category: MessagingCategories[0]
+            },
+            data: "data"
+        };
+        let subscription: MessageBroker = broker.subscribeHandler(name);
+        let notify = new NotifyProducer<MessageEvent>();
+        let producer = subscription.attachDeadLetter(notify);
+        let event$ = Stream.create(producer).addListener({
+            next: (m: MessageEvent) => { assert.deepEqual(m.data.data, message.data); },
+            complete: () => {},
+            error: () => {}
+        });
+        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
+        worker.dispatchEvent(evt as any);
+        channel.port2.postMessage(message);
+    });
+    it("Messages with category 'progress' should get a progress callback", () => {
+        message.envelope.category = MessagingCategories[1];
+        let evt = new MessageEventMock("message", {data: message});
+        let notify = new NotifyProducer<IBrokerMessage>();
+        let producer = broker.attachMessage(notify, "task");
+        let event$ = Stream.create(producer).addListener({
+            next: (m: IProgressMessage) => { assert.deepEqual(typeof m.progress, "function"); },
+            complete: () => {},
+            error: () => {}
+        });
+        worker.dispatchEvent(evt as any);
+    });
+    it("progress callback should post messages to target with category progressCallback", () => {
+        message.envelope.category = MessagingCategories[1];
+        let evt = new MessageEventMock("message", {data: message});
+        let notify = new NotifyProducer<IBrokerMessage>();
+        let producer = broker.attachMessage(notify, "task");
+        let event$ = Stream.create(producer).addListener({
+            next: (m: IProgressMessage) => { m.progress("proceding"); },
+            complete: () => {},
+            error: () => {}
+        });
+        worker.onposted = (e: MessageEvent, ports: MessagePort[]) => {
+            assert.deepEqual(e.data.data.status, "proceding");
+            assert.deepEqual(e.data.envelope.category, MessagingCategories[4]);
+        };
+        worker.dispatchEvent(evt as any);
+    });
+    it("Messages with category 'cancel' should get a cancel callback", () => {
+        message.envelope.category = MessagingCategories[2];
+        let evt = new MessageEventMock("message", {data: message});
+        let notify = new NotifyProducer<IBrokerMessage>();
+        let producer = broker.attachMessage(notify, "task");
+        let event$ = Stream.create(producer).addListener({
+            next: (m: ICancelMessage) => { assert.deepEqual(typeof m.cancel, "function"); },
+            complete: () => {},
+            error: () => {}
+        });
+        worker.dispatchEvent(evt as any);
+    });
+    it("cancel callback should post message to target with category cancaelCallback", () => {
+        message.envelope.category = MessagingCategories[2];
+        let evt = new MessageEventMock("message", {data: message});
+        let notify = new NotifyProducer<IBrokerMessage>();
+        let producer = broker.attachMessage(notify, "task");
+        let event$ = Stream.create(producer).addListener({
+            next: (m: ICancelMessage) => { m.cancel("proceding"); },
+            complete: () => {},
+            error: () => {}
+        });
+        worker.onposted = (e: MessageEvent, ports: MessagePort[]) => {
+            assert.deepEqual(e.data.data.status, "proceding");
+            assert.deepEqual(e.data.envelope.category, MessagingCategories[5]);
+        };
+        worker.dispatchEvent(evt as any);
+    });
+    it("sendMessage() should post message to target", () => {
+        worker.onposted = (m: MessageEvent, ports: MessagePort[]) => assert.deepEqual(m.data.data, "data");
+        broker.sendMessage(message as any);
+    });
+    it("sendMessage() should post message to targets port if target has it target name and PortBroker target", () => {
+        let channel = new MessageChannel();
+        let name = "test";
+        let publishMessage: IBrokerMessage = {
+            envelope: {
+                type: MessagingTypes[1],
+                name: name,
+                category: MessagingCategories[0]
+            },
+            data: "data"
+        };
+        let subscription = broker.subscribeHandler(name);
+        channel.port2.onmessage = (m: MessageEvent) => { assert.deepEqual(m.data.data, "data"); };
+        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
+        worker.dispatchEvent(evt as any);
+        (message.envelope as any).target = [name];
+        broker.sendMessage(message as any);
+    });
+    it("sendMessage() should throw error if specified broker target not found", () => {
+        (message.envelope as any).target = ["nope"];
+        assert.throws(() => {
+            broker.sendMessage(message as any);
+        });
+    });
+    it("sendPublish() should post publish to target", () => {
+        let port = new MessageChannel().port1;
+        worker.onposted = (m: MessageEvent, ports: MessagePort[]) => {
+            assert.deepEqual(ports[0], port);
+            assert.deepEqual(m.data.data, "data");
+        };
+        let publish = message;
+        (publish as IPublishMessage).port = port;
+        publish.envelope.type = MessagingTypes[1];
+        broker.sendPublish(publish as any);
+    });
+    it("sendPublish() should post publish to targets port if target has it target name and PortBroker target", () => {
+        let channel = new MessageChannel();
+        let channelP = new MessageChannel();
+        let name = "test";
+        let publishMessage: IBrokerMessage = {
+            envelope: {
+                type: MessagingTypes[1],
+                name: name,
+                category: MessagingCategories[0]
+            },
+            data: "data"
+        };
+        let subscription = broker.subscribeHandler(name);
+        channel.port2.onmessage = (m: MessageEvent) => {
+            assert.deepEqual(m.data.data, "data");
+            assert.deepEqual(m.ports[0], channelP.port1);
+        };
+        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
+        worker.dispatchEvent(evt as any);
+        (message.envelope as any).target = [name];
+        (message as any).port = channelP.port1;
+        broker.sendMessage(message as any);
+    });
 });
-*/

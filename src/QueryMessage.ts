@@ -1,4 +1,5 @@
 import {MessageBroker} from "./MessageBroker";
+/*
 export class ChooseBroker {
     private listeners: { [name: string]: MessageBroker };
     constructor(listeners: { [name: string]: MessageBroker }) {
@@ -51,4 +52,4 @@ export class ChooseCategory {
     public Message() {}
     public Progress() {}
     public Cancel() {}
-}
+}*/

@@ -6,17 +6,32 @@ export interface IEnvelope {
     category?: string; // specify if message is data, progress message or cancellation token
     bare?: boolean; // post only data
 }
-export type CancelCallback = (data: any) => void;
-export type ProgressCallback = (progress: number, status: string,  data: any) => void;
+export interface IRoutedEnvelope {
+    target: string[]; // broker name
+    type: string; // messaging type
+    name: string; // operation name
+    category?: string; // specify if message is data, progress message or cancellation token
+    bare?: boolean; // post only data
+}
+export type StatusCallback = (status: any) => void;
+export interface IRoutedMessage {
+    envelope: IRoutedEnvelope;
+    data: any;
+}
+export interface IRoutedPublish {
+    envelope: IRoutedEnvelope;
+    data: any;
+    port: MessagePort;
+}
 export interface IBrokerMessage {
     envelope: IEnvelope;
     data: any;
 }
 export interface IProgressMessage extends IBrokerMessage {
-    progress: ProgressCallback;
+    progress: StatusCallback;
 }
 export interface ICancelMessage extends IBrokerMessage {
-    cancel: CancelCallback;
+    cancel: StatusCallback;
 }
 export interface IPublishMessage extends IBrokerMessage {
     port: MessagePort;
@@ -46,7 +61,4 @@ export abstract class AbstractMessageProducer<T> implements Producer<T> {
     public abstract start: (listeners: Listener<T>) => void;
     public abstract trigger: (message: T) => void;
     public abstract stop: () => void;
-}
-export interface IMessageBroker {
-    producerFactory: (method: string, name: string) => AbstractMessageProducer<any>;
 }
