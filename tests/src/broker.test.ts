@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import {IBrokerMessage, MessagingTypes, MessagingCategories, IPublishMessage, IProgressMessage, ICancelMessage, IRoutedMessage} from "../../lib/AbstractBroker";
+import {IBrokerMessage, MessagingTypes, MessagingCategories, IPublishMessage, IProgressMessage, ICancelMessage, IRoutedMessage, LifeCycleEvents} from "../../lib/AbstractBroker";
 import {MessageBroker, NotifyProducer} from "../../lib/MessageBroker";
 import {WorkerMock, MessageEventMock, ErrorEventMock} from "../../lib/WorkerMock";
 import {WorkerTarget, TargetRoute} from "../../lib/MessageTargets";
@@ -235,6 +235,28 @@ describe("MessageBroker tests", () => {
         worker.dispatchEvent(evt as any);
         (message.envelope as any).target = [name];
         (message as any).port = channelP.port1;
-        broker.sendMessage(message as any);
+        message.envelope.type = MessagingTypes[1];
+        broker.sendPublish(message as any);
+    });
+    it("attachLifeCycle() should return producer which triggers on attachTarget() with message initialized", () => {
+        let notify = new NotifyProducer<string>();
+        let producer = broker.attachLifeCycle(notify);
+        broker.disposeTarget();
+        let event$ = Stream.create(producer).addListener({
+            next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[0]); },
+            complete: () => {},
+            error: () => {}
+        });
+        broker.attachTarget(workerTarget);
+    });
+    it("attachLifeCycle() should return producer which triggers on dispose() with message disposed", () => {
+        let notify = new NotifyProducer<string>();
+        let producer = broker.attachLifeCycle(notify);
+        let event$ = Stream.create(producer).addListener({
+            next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[1]); },
+            complete: () => {},
+            error: () => {}
+        });
+        broker.disposeTarget();
     });
 });

@@ -1,55 +1,73 @@
-import {MessageBroker} from "./MessageBroker";
-/*
+import { Stream } from "xstream";
+import { MessageBroker, NotifyProducer } from "./MessageBroker";
+import { MessageBrokersSetup } from "./makeMessagingDriver";
+import { IBroker } from "./MessageBroker";
+import { IBrokerMessage, MessagingCategories } from "./AbstractBroker";
 export class ChooseBroker {
-    private listeners: { [name: string]: MessageBroker };
-    constructor(listeners: { [name: string]: MessageBroker }) {
-        this.listeners = listeners;
+    private brokers: MessageBrokersSetup;
+    constructor(listeners: MessageBrokersSetup) {
+        this.brokers = listeners;
     }
     public Target(brokerName?: string) {
         if (!brokerName) {
-            return new ChooseType(this.listeners["self"]);
-        } else if (this.listeners[brokerName]) {
-            return new ChooseType(this.listeners[brokerName]);
+            return new ChooseType(this.brokers["self"]);
+        } else if (this.brokers[brokerName]) {
+            return new ChooseType(this.brokers[brokerName]);
         } else {
             throw new Error("No such broker");
         }
     }
 }
-export class ChooseType {
-    private context: BrokerListener;
-    constructor(listener: BrokerListener) {
+export class SubscribeChooseType {
+    private context: IBroker;
+    constructor(listener: IBroker) {
         this.context = listener;
     }
-    private makeMessageListener(message: string, contextListener) {
-        this.context.addMessageListener(message, contextListener);
+    public Messages(name: string) {
+        let producer = this.context.attachMessage(new NotifyProducer<IBrokerMessage>(), name);
+        let stream = Stream.create(producer);
+        return new ChooseCategory(stream);
     }
-    public Promise(name: string) {
-        let category = new ChooseCategory(this.context, MessagingTypes[0], name);
+    public Subscribe(name: string) {
+        let broker = this.context.subscribeHandler(name);
+        return new SubscribeChooseType(broker);
     }
-    public Request(name: string) {
-        return new ChooseCategory(this.context, MessagingTypes[1], name);
+    public DeadLetters() {
+        let producer = this.context.attachDeadLetter(new NotifyProducer<MessageEvent>());
+        return Stream.create(producer);
     }
-    public Response(name: string) {
-        return new ChooseCategory(this.context, MessagingTypes[2], name);
+    public LifeCycle() {
+        let producer = this.context.attachLifeCycle(new NotifyProducer<string>());
+        return Stream.create(producer);
     }
-    public Subscribe(name: string) {}
-    public DeadLetters() {}
-    public Error() {}
+}
+export class ChooseType extends SubscribeChooseType {
+    private eContext: IBroker;
+    constructor(listener: IBroker) {
+        super(listener);
+        this.eContext = listener;
+    }
+    public Errors() {
+        let producer = this.eContext.attachError(new NotifyProducer<ErrorEvent>());
+        return Stream.create(producer);
+    }
 }
 export class ChooseCategory {
-    private context: BrokerListener;
-    private type: string;
-    private name: string;
-    constructor(context: BrokerListener, type: string, name: string) {
+    private context: Stream<IBrokerMessage>;
+    constructor(context: Stream<IBrokerMessage>) {
         this.context = context;
-        this.type = type;
-        this.name = name;
     }
-    public onmessage(message: IBrokerMessage) {
-        this.route(message);
+    public Data() {
+        let takeMessages = (m: IBrokerMessage) => {
+            let c = m.envelope.category;
+            return c === MessagingCategories[0] || c === MessagingCategories[1] || c === MessagingCategories[2] || c === MessagingCategories[3];
+        };
+        return this.context.filter(takeMessages);
     }
-    private route(message: IBrokerMessage) {}
-    public Message() {}
-    public Progress() {}
-    public Cancel() {}
-}*/
+    public Progress() {
+        return this.context.filter((m: IBrokerMessage) => { return m.envelope.category === MessagingCategories[4]; });
+    }
+    public Cancel() {
+        return this.context.filter((m: IBrokerMessage) => m.envelope.category === MessagingCategories[5]);
+    }
+}

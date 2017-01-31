@@ -5,6 +5,7 @@ export interface IEnvelope {
     name: string; // operation name
     category?: string; // specify if message is data, progress message or cancellation token
     bare?: boolean; // post only data
+    origin?: string;
 }
 export interface IRoutedEnvelope {
     target: string[]; // broker name
@@ -48,6 +49,10 @@ export enum MessagingCategories {
     error,
     progressCallback,
     cancelCallback
+}
+export enum LifeCycleEvents {
+    initialized,
+    disposed
 }
 export interface IMessageTarget {
     makeMessage: (message: IBrokerMessage) => void;
