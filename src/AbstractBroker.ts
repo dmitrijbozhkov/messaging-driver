@@ -1,29 +1,14 @@
 import {Listener, Producer} from "xstream";
+import { IMessageTarget } from "./MessageTargets";
 export interface IEnvelope {
-    target?: string; // broker name
+    target?: string[]; // broker name
     type: string; // messaging type
     name: string; // operation name
     category?: string; // specify if message is data, progress message or cancellation token
     bare?: boolean; // post only data
     origin?: string;
 }
-export interface IRoutedEnvelope {
-    target: string[]; // broker name
-    type: string; // messaging type
-    name: string; // operation name
-    category?: string; // specify if message is data, progress message or cancellation token
-    bare?: boolean; // post only data
-}
 export type StatusCallback = (status: any) => void;
-export interface IRoutedMessage {
-    envelope: IRoutedEnvelope;
-    data: any;
-}
-export interface IRoutedPublish {
-    envelope: IRoutedEnvelope;
-    data: any;
-    port: MessagePort;
-}
 export interface IBrokerMessage {
     envelope: IEnvelope;
     data: any;
@@ -34,13 +19,17 @@ export interface IProgressMessage extends IBrokerMessage {
 export interface ICancelMessage extends IBrokerMessage {
     cancel: StatusCallback;
 }
-export interface IPublishMessage extends IBrokerMessage {
+export interface IPortMessage extends IBrokerMessage {
     port: MessagePort;
+}
+export interface IAttachMessage extends IBrokerMessage {
+    target: IMessageTarget;
 }
 export enum MessagingTypes {
     message,
     publish,
-    subscribe
+    subscribe,
+    broker
 }
 export enum MessagingCategories {
     data,
@@ -48,7 +37,9 @@ export enum MessagingCategories {
     cancel,
     error,
     progressCallback,
-    cancelCallback
+    cancelCallback,
+    attach,
+    dispose
 }
 export enum LifeCycleEvents {
     initialized,
@@ -56,9 +47,9 @@ export enum LifeCycleEvents {
 }
 export interface IMessageTarget {
     makeMessage: (message: IBrokerMessage) => void;
-    makePublish: (publish: IPublishMessage) => void;
+    makePublish: (publish: IPortMessage) => void;
     onmessage: (message: IBrokerMessage) => void;
-    onpublish: (publish: IPublishMessage) => void;
+    onpublish: (publish: IPortMessage) => void;
     ondeadletter: (letter: MessageEvent) => void;
     onerror: (error: ErrorEvent) => void;
 }

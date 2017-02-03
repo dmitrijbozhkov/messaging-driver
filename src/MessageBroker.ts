@@ -1,4 +1,4 @@
-import {IBrokerMessage, MessagingTypes, AbstractMessageProducer, IPublishMessage, MessagingCategories, IProgressMessage, ICancelMessage, IRoutedMessage, IRoutedPublish, LifeCycleEvents} from "./AbstractBroker";
+import {IBrokerMessage, MessagingTypes, AbstractMessageProducer, IPortMessage, MessagingCategories, IProgressMessage, ICancelMessage, LifeCycleEvents} from "./AbstractBroker";
 import {Producer, Listener} from "xstream";
 import {WorkerTarget, PortTarget, TargetRoute, IMessageTarget} from "./MessageTargets";
 import {WorkerMock} from "./WorkerMock";
@@ -19,9 +19,10 @@ export class NotifyProducer<T> implements AbstractMessageProducer<T> {
     }
 }
 export interface IBroker {
-    sendMessage: (message: IRoutedMessage) => void;
-    sendPublish: (publish: IRoutedPublish) => void;
+    sendMessage: (message: IBrokerMessage) => void;
+    sendPublish: (publish: IBrokerMessage) => void;
     subscribeHandler: (name: string) => IBroker;
+    publishHandler: (publish: IBrokerMessage, port: MessagePort) => void;
     attachTarget: (target: IMessageTarget) => void;
     disposeTarget: () => void;
     attachLifeCycle: (producer: NotifyProducer<string>) => NotifyProducer<string>;
@@ -80,7 +81,7 @@ export class MessageBroker implements IBroker {
             this.sendMessage(message as any);
         };
     }
-    public sendMessage(message: IRoutedMessage) {
+    public sendMessage(message: IBrokerMessage) {
         if (!message.envelope.target) {
             this.target.makeMessage(message as any);
         } else if (!message.envelope.target.length) {
@@ -95,7 +96,7 @@ export class MessageBroker implements IBroker {
             }
         }
     }
-    public sendPublish(publish: IRoutedPublish) {
+    public sendPublish(publish: IPortMessage) {
         if (!publish.envelope.target) {
             this.target.makePublish(publish as any);
         } else if (!publish.envelope.target.length) {
@@ -121,7 +122,13 @@ export class MessageBroker implements IBroker {
         }
         return broker;
     }
-    private publishHandler(publish: IBrokerMessage, port: MessagePort) {
+    public publishHandler(publish: IBrokerMessage, port: MessagePort) {
+        if (!publish.envelope.name) {
+            throw new Error("Name is empty");
+        }
+        if ((publish as IPortMessage).port) {
+            delete (publish as IPortMessage).port;
+        }
         let portTarget = new PortTarget(port, new TargetRoute());
         let broker = this.findBroker(publish.envelope.name);
         if (!broker) {
@@ -131,6 +138,9 @@ export class MessageBroker implements IBroker {
         (broker.broker as MessageBroker).attachTarget(portTarget);
     }
     public subscribeHandler(name: string) {
+        if (!name) {
+            throw new Error("Name is empty");
+        }
         let portBroker = this.findBroker(name);
         if (!portBroker) {
             portBroker = { broker: new MessageBroker(), name: name };
@@ -152,6 +162,7 @@ export class MessageBroker implements IBroker {
     public disposeTarget() {
         this.target.dispose();
         this.target = null;
+        this.PortBrokers = [];
         this.fireLifeCycleEvent(LifeCycleEvents[1]);
     }
     private fireLifeCycleEvent(status: string) {

@@ -1,4 +1,4 @@
-import {IBrokerMessage, MessagingCategories, MessagingTypes, IEnvelope, IPublishMessage} from "./AbstractBroker";
+import {IBrokerMessage, MessagingCategories, MessagingTypes, IEnvelope, IPortMessage} from "./AbstractBroker";
 export interface IMessageHandler {
     onerror: (error: ErrorEvent) => void;
     ondeadletter: (data: MessageEvent) => void;
@@ -7,7 +7,7 @@ export interface IMessageHandler {
 }
 export interface IMessageTarget extends IMessageHandler {
     makeMessage: (message: IBrokerMessage) => void;
-    makePublish: (message: IPublishMessage) => void;
+    makePublish: (message: IPortMessage) => void;
     dispose: () => void;
 }
 export interface ITargetRouter extends IMessageHandler {
@@ -75,7 +75,7 @@ export class WorkerTarget implements IMessageTarget {
             throw new Error("Wrong message type");
         }
     }
-    public makePublish(message: IPublishMessage) {
+    public makePublish(message: IPortMessage) {
         let port = message.port;
         delete message.port;
         if (message.envelope.type === MessagingTypes[1]) {
@@ -122,7 +122,7 @@ export class PortTarget implements IMessageTarget {
             throw new Error("Wrong message type");
         }
     }
-    public makePublish(message: IPublishMessage) {
+    public makePublish(message: IPortMessage) {
         let port = message.port;
         delete message.port;
         if (message.envelope.type === MessagingTypes[1]) {
@@ -173,7 +173,7 @@ export class FrameTarget implements IMessageTarget {
             throw new Error("Wrong message type");
         }
     }
-    public makePublish(message: IPublishMessage) {
+    public makePublish(message: IPortMessage) {
         let port = message.port;
         delete message.port;
         if (message.envelope.type === MessagingTypes[1]) {

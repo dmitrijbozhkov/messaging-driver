@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import {IBrokerMessage, MessagingTypes, MessagingCategories, IPublishMessage, IProgressMessage, ICancelMessage, IRoutedMessage, LifeCycleEvents} from "../../lib/AbstractBroker";
+import {IBrokerMessage, MessagingTypes, MessagingCategories, IProgressMessage, ICancelMessage, LifeCycleEvents, IPortMessage} from "../../lib/AbstractBroker";
 import {MessageBroker, NotifyProducer} from "../../lib/MessageBroker";
 import {WorkerMock, MessageEventMock, ErrorEventMock} from "../../lib/WorkerMock";
 import {WorkerTarget, TargetRoute} from "../../lib/MessageTargets";
@@ -210,7 +210,7 @@ describe("MessageBroker tests", () => {
             assert.deepEqual(m.data.data, "data");
         };
         let publish = message;
-        (publish as IPublishMessage).port = port;
+        (publish as IPortMessage).port = port;
         publish.envelope.type = MessagingTypes[1];
         broker.sendPublish(publish as any);
     });

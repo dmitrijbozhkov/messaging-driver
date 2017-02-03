@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import {WorkerTarget, TargetRoute, PortTarget, FrameTarget} from "../../lib/MessageTargets";
 import {WorkerMock, MessageEventMock, ErrorEventMock, FrameMock} from "../../lib/WorkerMock";
-import {IBrokerMessage, MessagingTypes, MessagingCategories, IPublishMessage} from "../../lib/AbstractBroker";
+import {IBrokerMessage, MessagingTypes, MessagingCategories, IPortMessage} from "../../lib/AbstractBroker";
 describe("TargetRoute tests", () => {
     let router: TargetRoute;
     let data = "data";
@@ -126,11 +126,11 @@ describe("WorkerTarget tests", () => {
             colno: 18,
             type: "error"
         };
-        workerTarget.onerror = (e: ErrorEvent) => assert.deepEqual(e.message, errEvent.message);
+        workerTarget.onerror = (e: ErrorEvent) => { assert.deepEqual(e.message, errEvent.message); };
         worker.dispatchEvent(errEvent as any);
     });
     it("makeMessage() should post message to worker", () => {
-        worker.onposted = (e: any) => assert.deepEqual(e.data.data, data);
+        worker.onposted = (e: any) => { assert.deepEqual(e.data.data, data); };
         let message: IBrokerMessage = {
             envelope: {
                 type: MessagingTypes[0],
@@ -179,7 +179,7 @@ describe("WorkerTarget tests", () => {
     });
     it("makePublish() should post publish to worker", () => {
         let port = new MessageChannel().port1;
-        let message: IPublishMessage = {
+        let message: IPortMessage = {
             envelope: {
                 type: MessagingTypes[1],
                 name: "TestRequest",
@@ -196,7 +196,7 @@ describe("WorkerTarget tests", () => {
     });
     it("makePublish() should post all that is in message.data and add port to ports if bare is true", () => {
         let port = new MessageChannel().port1;
-        let message: IPublishMessage = {
+        let message: IPortMessage = {
             envelope: {
                 type: MessagingTypes[1],
                 name: "TestPromise",
@@ -214,7 +214,7 @@ describe("WorkerTarget tests", () => {
     });
     it("makePublish() should throw exception if envelope.type equal to message", () => {
         let port = new MessageChannel().port1;
-        let message: IPublishMessage = {
+        let message: IPortMessage = {
             envelope: {
                 type: MessagingTypes[0],
                 name: "TestRequest",
@@ -290,7 +290,7 @@ describe("PortTarget tests", () => {
     });
     it("makePublish() should post publish to port", () => {
         let port = new MessageChannel().port1;
-        let message: IPublishMessage = {
+        let message: IPortMessage = {
             envelope: {
                 type: MessagingTypes[1],
                 name: "TestRequest",
@@ -307,7 +307,7 @@ describe("PortTarget tests", () => {
     });
     it("makePublish() should post all that is in message.data and add port to ports if bare is true", () => {
         let port = new MessageChannel().port1;
-        let message: IPublishMessage = {
+        let message: IPortMessage = {
             envelope: {
                 type: MessagingTypes[1],
                 name: "TestPromise",
@@ -325,7 +325,7 @@ describe("PortTarget tests", () => {
     });
     it("makePublish() should throw exception if envelope.type equal to message", () => {
         let port = new MessageChannel().port1;
-        let message: IPublishMessage = {
+        let message: IPortMessage = {
             envelope: {
                 type: MessagingTypes[0],
                 name: "TestRequest",
@@ -415,7 +415,7 @@ describe("FrameTarget tests", () => {
     });
     it("makePublish() should post publish to frame", () => {
         let port = new MessageChannel().port1;
-        let message: IPublishMessage = {
+        let message: IPortMessage = {
             envelope: {
                 type: MessagingTypes[1],
                 name: "TestRequest",
@@ -433,7 +433,7 @@ describe("FrameTarget tests", () => {
     });
     it("makePublish() should post all that in message.data if bare is true", () => {
         let port = new MessageChannel().port1;
-        let message: IPublishMessage = {
+        let message: IPortMessage = {
             envelope: {
                 type: MessagingTypes[1],
                 name: "TestRequest",
@@ -452,7 +452,7 @@ describe("FrameTarget tests", () => {
     });
     it("makePublish() should throw exception if envelope.type equal to message", () => {
         let port = new MessageChannel().port1;
-        let message: IPublishMessage = {
+        let message: IPortMessage = {
             envelope: {
                 type: MessagingTypes[1],
                 name: "TestRequest",
@@ -468,7 +468,7 @@ describe("FrameTarget tests", () => {
     });
     it("makePublish() should throw exception if no envelope.origin specified", () => {
         let port = new MessageChannel().port1;
-        let message: IPublishMessage = {
+        let message: IPortMessage = {
             envelope: {
                 type: MessagingTypes[1],
                 name: "TestRequest",

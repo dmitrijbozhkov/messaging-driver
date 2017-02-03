@@ -1,11 +1,12 @@
 import * as assert from "assert";
-import { IBrokerMessage, MessagingTypes, MessagingCategories, LifeCycleEvents } from "../../lib/AbstractBroker";
+import { IBrokerMessage, MessagingTypes, MessagingCategories, LifeCycleEvents, IPortMessage, IAttachMessage } from "../../lib/AbstractBroker";
 import { makeMessagingDriver, MessageBrokersSetup } from "../../lib/makeMessagingDriver";
 import { FrameTarget, WorkerTarget, PortTarget, TargetRoute } from "../../lib/MessageTargets";
 import { FrameMock, WorkerMock, MessageEventMock, ErrorEventMock } from "../../lib/WorkerMock";
-import { MessageBroker } from "../../lib/MessageBroker";
+import { MessageBroker, NotifyProducer, IBroker } from "../../lib/MessageBroker";
 import { ChooseBroker, ChooseCategory, ChooseType, SubscribeChooseType } from "../../lib/QueryMessage";
-import {Stream} from "xstream";
+import { SinkRouter } from "../../lib/SinkRouter";
+import { Stream } from "xstream";
 describe("makeMessagingDriver source tests", () => {
     let channel: MessageChannel;
     let frame: FrameMock;
@@ -452,5 +453,173 @@ describe("makeMessagingDriver source tests", () => {
     });
 });
 describe("makeMessagingDriver sink tests", () => {
-    it("Messages with no envelope.target should go to 'self' IBroker");
+    let selfWorker: WorkerMock;
+    let wWorker: WorkerMock;
+    let selfTarget: WorkerTarget;
+    let wTarget: WorkerTarget;
+    let selfBroker: MessageBroker;
+    let wBroker: MessageBroker;
+    let brokers: MessageBrokersSetup;
+    let router: SinkRouter;
+    let name = "mess";
+    beforeEach(() => {
+        selfWorker = new WorkerMock("self");
+        wWorker = new WorkerMock("worker");
+        selfTarget = new WorkerTarget(selfWorker, new TargetRoute());
+        wTarget = new WorkerTarget(wWorker, new TargetRoute());
+        selfBroker = new MessageBroker();
+        wBroker = new MessageBroker();
+        selfBroker.attachTarget(selfTarget);
+        wBroker.attachTarget(wTarget);
+        brokers = {
+            self: selfBroker,
+            worker: wBroker
+        };
+        router = new SinkRouter(brokers);
+    });
+    it("Messages with no envelope.target should go to 'self' IBroker", () => {
+        let data = "data";
+        let message: IBrokerMessage = {
+            envelope: {
+                type: MessagingTypes[0],
+                name: name,
+                category: MessagingCategories[0]
+            },
+            data: data
+        };
+        selfWorker.onposted = (m: MessageEvent) => { assert.deepEqual(m.data.data, data); };
+        router.next(message);
+    });
+    it("Messages with type message and target 'worker' should route IBrokerMessage to 'worker' MessageBroker.sendMessage()", () => {
+        let data = "data";
+        let message: IBrokerMessage = {
+            envelope: {
+                target: ["worker"],
+                type: MessagingTypes[0],
+                name: name,
+                category: MessagingCategories[0]
+            },
+            data: data
+        };
+        wWorker.onposted = (m: MessageEvent) => { assert.deepEqual(m.data.data, data); };
+        router.next(message);
+    });
+    it("Messages with type publish and target 'worker' should route IPortMessage to 'worker' MessageBroker.sendPublish()", () => {
+        let data = "data";
+        let channel = new MessageChannel();
+        let message: IPortMessage = {
+            envelope: {
+                target: ["worker"],
+                type: MessagingTypes[1],
+                name: name,
+                category: MessagingCategories[0]
+            },
+            data: data,
+            port: channel.port1
+        };
+        wWorker.onposted = (m: MessageEvent, ports: MessagePort[]) => {
+            assert.deepEqual(m.data.data, data);
+            assert.deepEqual(ports[0], channel.port1);
+        };
+        router.next(message);
+    });
+    it("Messages with type subscribe and target 'worker' should route IPortMessage to 'worker' MessageBroker.publishHandler()", () => {
+        let data = "data";
+        let channel = new MessageChannel();
+        let sub: IPortMessage = {
+            envelope: {
+                target: ["worker"],
+                type: MessagingTypes[2],
+                name: name,
+                category: MessagingCategories[0]
+            },
+            data: data,
+            port: channel.port1
+        };
+        let message: IBrokerMessage = {
+            envelope: {
+                target: ["worker"],
+                type: MessagingTypes[0],
+                name: "mes",
+                category: MessagingCategories[0]
+            },
+            data: data
+        };
+        router.next(sub);
+        let subBroker: IBroker = wBroker.subscribeHandler(name);
+        let notify = new NotifyProducer<IBrokerMessage>();
+        Stream.create(subBroker.attachMessage(notify, "mes")).addListener({
+            next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
+            error: () => {},
+            complete: () => {}
+        });
+        channel.port2.postMessage(message);
+    });
+    it("Messages with type broker, target 'worker' and category 'dispose' should route IAttachMessage to 'worker' MessageBroker.disposeTarget()", () => {
+        let data = "data";
+        let message: IAttachMessage = {
+            envelope: {
+                target: ["worker"],
+                type: MessagingTypes[3],
+                name: name,
+                category: MessagingCategories[7]
+            },
+            data: data,
+            target: null
+        };
+        let notify = new NotifyProducer<string>();
+        Stream.create(wBroker.attachLifeCycle(notify)).addListener({
+            next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[1]); },
+            error: () => {},
+            complete: () => {}
+        });
+        router.next(message);
+    });
+    it("Messages with type broker, target 'worker' and category 'attach' should route IAttachMessage to 'worker' MessageBroker.attachTarget()", () => {
+        let data = "data";
+        let message: IAttachMessage = {
+            envelope: {
+                target: ["worker"],
+                type: MessagingTypes[3],
+                name: name,
+                category: MessagingCategories[6]
+            },
+            data: data,
+            target: selfTarget
+        };
+        let messageDispose: IAttachMessage = {
+            envelope: {
+                target: ["worker"],
+                type: MessagingTypes[3],
+                name: name,
+                category: MessagingCategories[7]
+            },
+            data: data,
+            target: null
+        };
+        router.next(messageDispose);
+        let notify = new NotifyProducer<string>();
+        Stream.create(wBroker.attachLifeCycle(notify)).addListener({
+            next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[0]); },
+            error: () => {},
+            complete: () => {}
+        });
+        router.next(message);
+    });
+    it("Messages with type broker and any category except attach and dispose should throw exception", () => {
+        let data = "data";
+        let message: IAttachMessage = {
+            envelope: {
+                target: ["worker"],
+                type: MessagingTypes[3],
+                name: name,
+                category: MessagingCategories[1]
+            },
+            data: data,
+            target: selfTarget
+        };
+        assert.throws(() => {
+            router.next(message);
+        });
+    });
 });

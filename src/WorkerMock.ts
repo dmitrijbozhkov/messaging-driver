@@ -69,9 +69,15 @@ export class WorkerMock implements Worker {
         if (typeof ports === "undefined") {
             ports = [];
         }
-        let ev =  document.createEvent("MessageEvent");
-        ev.initMessageEvent("none", true, true, message, "lel", "", window);
-        this.onposted(ev, ports);
+        let ev: MessageEvent;
+        try {
+            ev =  new MessageEvent("none", { data: message, ports: ports });
+        } catch (e) {
+            ev = document.createEvent("MessageEvent");
+            ev.initMessageEvent("none", true, true, message, "lel", "", window);
+        } finally {
+            this.onposted(ev, ports);
+        }
     }
     public terminate() {
         this.terminated = true;
@@ -114,9 +120,15 @@ export class FrameMock implements Worker {
         if (typeof ports === "undefined") {
             ports = [];
         }
-        let ev =  document.createEvent("MessageEvent");
-        ev.initMessageEvent("none", true, true, message, "lel", "", window);
-        this.onposted(ev, ports);
+        let ev: MessageEvent;
+        try {
+            ev =  new MessageEvent("none", { data: message, origin: origin, ports: ports });
+        } catch (e) {
+            ev = document.createEvent("MessageEvent");
+            ev.initMessageEvent("none", true, true, message, "lel", "", window);
+        } finally {
+            this.onposted(ev, ports);
+        }
     }
     public terminate() {
         this.terminated = true;
