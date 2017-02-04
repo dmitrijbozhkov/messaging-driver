@@ -45,14 +45,6 @@ export enum LifeCycleEvents {
     initialized,
     disposed
 }
-export interface IMessageTarget {
-    makeMessage: (message: IBrokerMessage) => void;
-    makePublish: (publish: IPortMessage) => void;
-    onmessage: (message: IBrokerMessage) => void;
-    onpublish: (publish: IPortMessage) => void;
-    ondeadletter: (letter: MessageEvent) => void;
-    onerror: (error: ErrorEvent) => void;
-}
 export abstract class AbstractMessageProducer<T> implements Producer<T> {
     public abstract start: (listeners: Listener<T>) => void;
     public abstract trigger: (message: T) => void;
