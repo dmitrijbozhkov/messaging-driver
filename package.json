@@ -13,12 +13,15 @@
     "test": "mocha-phantomjs ./tests/runner.html"
   },
   "repository": {
-    "type": "git"
+    "type": "git",
+    "url": ""
   },
   "keywords": [
     "typescript",
     "cyclejs",
-    "web workers"
+    "web workers",
+    "iframe",
+    "MessageChannel"
   ],
   "author": "Dmitrij Bozhkov",
   "dependencies": {
