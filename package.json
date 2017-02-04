@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "./lib/init.js",
+  "typings": "./lib/init.d.ts",
   "scripts": {
     "watch-lib": "tsc -p app.tsconfig.json --watch",
     "watch-test": "webpack --cache --display-error-details --watch",
