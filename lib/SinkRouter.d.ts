@@ -1,13 +1,12 @@
 import { Listener } from "xstream";
-import { MessageBrokersSetup, SinkMessages } from "./makeMessagingDriver";
+import { SinkMessages } from "./makeMessagingDriver";
+import { IBroker } from "./MessageBroker";
 export declare class SinkRouter implements Listener<SinkMessages> {
-    private brokers;
-    constructor(brokers: MessageBrokersSetup);
+    private broker;
+    constructor(broker: IBroker);
     next(m: SinkMessages): void;
     error(e: any): void;
     complete(): void;
-    private findBroker(name);
-    private getSinkBroker(message);
     private handleMessage(message);
     private handlePublish(publish);
     private handleSubscription(subscribe);

@@ -1,14 +1,13 @@
 import {Stream} from "xstream";
 import {IBroker} from "./MessageBroker";
 import { IBrokerMessage, IPortMessage, IAttachMessage } from "./AbstractBroker";
-import { ChooseBroker } from "./QueryMessage";
+import { ChooseType } from "./QueryMessage";
 import { SinkRouter } from "./SinkRouter";
 export type SinkMessages = IBrokerMessage | IPortMessage | IAttachMessage;
-export type MessageBrokersSetup = { [name: string]: IBroker };
-export function makeMessagingDriver(brokers: MessageBrokersSetup) {
+export function makeMessagingDriver(broker: IBroker) {
     return (source: Stream<SinkMessages>) => {
-        let routeSink = new SinkRouter(brokers);
+        let routeSink = new SinkRouter(broker);
         source.addListener(routeSink);
-        return new ChooseBroker(brokers);
+        return new ChooseType(broker);
     };
 }

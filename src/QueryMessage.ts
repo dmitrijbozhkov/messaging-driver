@@ -1,8 +1,8 @@
 import { Stream } from "xstream";
 import { MessageBroker, NotifyProducer } from "./MessageBroker";
-import { MessageBrokersSetup } from "./makeMessagingDriver";
 import { IBroker } from "./MessageBroker";
 import { IBrokerMessage, MessagingCategories } from "./AbstractBroker";
+/*
 export class ChooseBroker {
     private brokers: MessageBrokersSetup;
     constructor(listeners: MessageBrokersSetup) {
@@ -18,6 +18,7 @@ export class ChooseBroker {
         }
     }
 }
+*/
 export class SubscribeChooseType {
     private context: IBroker;
     constructor(listener: IBroker) {

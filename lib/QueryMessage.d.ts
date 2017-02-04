@@ -1,12 +1,6 @@
 import { Stream } from "xstream";
-import { MessageBrokersSetup } from "./makeMessagingDriver";
 import { IBroker } from "./MessageBroker";
 import { IBrokerMessage } from "./AbstractBroker";
-export declare class ChooseBroker {
-    private brokers;
-    constructor(listeners: MessageBrokersSetup);
-    Target(brokerName?: string): ChooseType;
-}
 export declare class SubscribeChooseType {
     private context;
     constructor(listener: IBroker);

@@ -1,10 +1,10 @@
 import * as assert from "assert";
 import { IBrokerMessage, MessagingTypes, MessagingCategories, LifeCycleEvents, IPortMessage, IAttachMessage } from "../../lib/AbstractBroker";
-import { makeMessagingDriver, MessageBrokersSetup } from "../../lib/makeMessagingDriver";
+import { makeMessagingDriver } from "../../lib/makeMessagingDriver";
 import { FrameTarget, WorkerTarget, PortTarget, TargetRoute } from "../../lib/MessageTargets";
 import { FrameMock, WorkerMock, MessageEventMock, ErrorEventMock } from "../../lib/WorkerMock";
 import { MessageBroker, NotifyProducer, IBroker } from "../../lib/MessageBroker";
-import { ChooseBroker, ChooseCategory, ChooseType, SubscribeChooseType } from "../../lib/QueryMessage";
+import {  ChooseCategory, ChooseType, SubscribeChooseType } from "../../lib/QueryMessage";
 import { SinkRouter } from "../../lib/SinkRouter";
 import { Stream } from "xstream";
 describe("makeMessagingDriver source tests", () => {
@@ -14,8 +14,8 @@ describe("makeMessagingDriver source tests", () => {
     let frameTarget: FrameTarget;
     let workerTarget: WorkerTarget;
     let portTarget: PortTarget;
-    let brokers: MessageBrokersSetup;
-    let source: ChooseBroker;
+    let broker: MessageBroker;
+    let source: ChooseType;
     beforeEach(() => {
         channel = new MessageChannel();
         frame = new FrameMock();
@@ -23,26 +23,22 @@ describe("makeMessagingDriver source tests", () => {
         frameTarget = new FrameTarget(frame as any, new TargetRoute());
         workerTarget = new WorkerTarget(worker as any, new TargetRoute());
         portTarget = new PortTarget(channel.port1, new TargetRoute());
-        brokers = {
-            frame: new MessageBroker(),
-            worker: new MessageBroker(),
-            port: new MessageBroker()
-        };
-        source = new ChooseBroker(brokers);
+        broker = new MessageBroker();
+        source = new ChooseType(broker);
     });
-    it("source.Target() should return ChooseType", () => {
-        let isChooseType = source.Target("frame") instanceof ChooseType;
+    it("source should return ChooseCategory", () => {
+        let isChooseType = source instanceof ChooseType;
         assert.ok(isChooseType);
     });
     it("source.Target().Messages() should return ChooseCategory", () => {
-        let isChooseCategory = source.Target("worker").Messages("task") instanceof ChooseCategory;
+        let isChooseCategory = source.Messages("task") instanceof ChooseCategory;
         assert.ok(isChooseCategory);
     });
     it("source.Target().Messages().Data() should return stream of IBrokerMessage with category data", () => {
         let name = "task";
         let data = "data";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Messages(name).Data();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Messages(name).Data();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -62,8 +58,8 @@ describe("makeMessagingDriver source tests", () => {
     it("source.Target().Messages().Data() should return stream of IBrokerMessage with category progress", () => {
         let name = "task";
         let data = "data";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Messages(name).Data();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Messages(name).Data();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -83,8 +79,8 @@ describe("makeMessagingDriver source tests", () => {
     it("source.Target().Messages().Data() should return stream of IBrokerMessage with category cancel", () => {
         let name = "task";
         let data = "data";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Messages(name).Data();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Messages(name).Data();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -104,8 +100,8 @@ describe("makeMessagingDriver source tests", () => {
     it("source.Target().Messages().Data() should return stream of IBrokerMessage with category error", () => {
         let name = "task";
         let data = "data";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Messages(name).Data();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Messages(name).Data();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -125,8 +121,8 @@ describe("makeMessagingDriver source tests", () => {
     it("source.Target().Messages().Progress() should return stream of IBrokerMessage with category progressCallback", () => {
         let name = "task";
         let data = "data";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Messages(name).Progress();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Messages(name).Progress();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -146,8 +142,8 @@ describe("makeMessagingDriver source tests", () => {
     it("source.Target().Messages().Cancel() should return stream of IBrokerMessage with category cancelCallback", () => {
         let name = "task";
         let data = "data";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Messages(name).Cancel();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Messages(name).Cancel();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -167,8 +163,8 @@ describe("makeMessagingDriver source tests", () => {
     it("source.Target().DeadLetters() should return stream of deadletters", () => {
         let name = "task";
         let data = "data";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").DeadLetters();
+        broker.attachTarget(workerTarget);
+        let data$ = source.DeadLetters();
         data$.addListener({
             next: (m: MessageEvent) => { assert.deepEqual(m.data.data, data); },
             complete: () => {},
@@ -183,8 +179,8 @@ describe("makeMessagingDriver source tests", () => {
     it("source.Target().Errors() should return stream of ErrorEvents", () => {
         let name = "task";
         let data = "data";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Errors();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Errors();
         let errEvent: ErrorEventMock = {
             message: "TypeError",
             filename: "index.js",
@@ -200,16 +196,16 @@ describe("makeMessagingDriver source tests", () => {
         worker.dispatchEvent(errEvent as any);
     });
     it("source.Target().LifeCycle() should return life cycle messages", () => {
-        let data$ = source.Target("worker").LifeCycle();
+        let data$ = source.LifeCycle();
         data$.addListener({
             next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[0]); },
             complete: () => {},
             error: () => {}
         });
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
+        broker.attachTarget(workerTarget);
     });
     it("source.Target().Subscribe() should return SubscribeChooseType", () => {
-        let subscription = source.Target("worker").Subscribe("sub");
+        let subscription = source.Subscribe("sub");
         assert.ok(subscription instanceof SubscribeChooseType);
     });
     it("source.Target().Subscribe().Messages().Data() should return stream of IBrokerMessage with category data", () => {
@@ -217,8 +213,8 @@ describe("makeMessagingDriver source tests", () => {
         let name = "task";
         let data = "data";
         let sub = "sub";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Subscribe(sub).Messages(name).Data();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Subscribe(sub).Messages(name).Data();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -249,8 +245,8 @@ describe("makeMessagingDriver source tests", () => {
         let name = "task";
         let data = "data";
         let sub = "sub";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Subscribe(sub).Messages(name).Data();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Subscribe(sub).Messages(name).Data();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -281,8 +277,8 @@ describe("makeMessagingDriver source tests", () => {
         let name = "task";
         let data = "data";
         let sub = "sub";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Subscribe(sub).Messages(name).Data();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Subscribe(sub).Messages(name).Data();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -313,8 +309,8 @@ describe("makeMessagingDriver source tests", () => {
         let name = "task";
         let data = "data";
         let sub = "sub";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Subscribe(sub).Messages(name).Data();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Subscribe(sub).Messages(name).Data();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -345,8 +341,8 @@ describe("makeMessagingDriver source tests", () => {
         let name = "task";
         let data = "data";
         let sub = "sub";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Subscribe(sub).Messages(name).Progress();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Subscribe(sub).Messages(name).Progress();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -377,8 +373,8 @@ describe("makeMessagingDriver source tests", () => {
         let name = "task";
         let data = "data";
         let sub = "sub";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Subscribe(sub).Messages(name).Cancel();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Subscribe(sub).Messages(name).Cancel();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -408,8 +404,8 @@ describe("makeMessagingDriver source tests", () => {
         let channel = new MessageChannel();
         let data = "data";
         let sub = "sub";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Subscribe(sub).DeadLetters();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Subscribe(sub).DeadLetters();
         data$.addListener({
             next: (m: MessageEvent) => { assert.deepEqual(m.data.data, data); },
             complete: () => {},
@@ -433,8 +429,8 @@ describe("makeMessagingDriver source tests", () => {
     it("source.Target().Subscribe().LifeCycle() should return stream of life cycle messages", () => {
         let channel = new MessageChannel();
         let sub = "sub";
-        ((brokers as any).worker as MessageBroker).attachTarget(workerTarget);
-        let data$ = source.Target("worker").Subscribe(sub).LifeCycle();
+        broker.attachTarget(workerTarget);
+        let data$ = source.Subscribe(sub).LifeCycle();
         data$.addListener({
             next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[0]); },
             complete: () => {},
@@ -457,9 +453,7 @@ describe("makeMessagingDriver sink tests", () => {
     let wWorker: WorkerMock;
     let selfTarget: WorkerTarget;
     let wTarget: WorkerTarget;
-    let selfBroker: MessageBroker;
     let wBroker: MessageBroker;
-    let brokers: MessageBrokersSetup;
     let router: SinkRouter;
     let name = "mess";
     beforeEach(() => {
@@ -467,34 +461,14 @@ describe("makeMessagingDriver sink tests", () => {
         wWorker = new WorkerMock("worker");
         selfTarget = new WorkerTarget(selfWorker, new TargetRoute());
         wTarget = new WorkerTarget(wWorker, new TargetRoute());
-        selfBroker = new MessageBroker();
         wBroker = new MessageBroker();
-        selfBroker.attachTarget(selfTarget);
         wBroker.attachTarget(wTarget);
-        brokers = {
-            self: selfBroker,
-            worker: wBroker
-        };
-        router = new SinkRouter(brokers);
+        router = new SinkRouter(wBroker);
     });
-    it("Messages with no envelope.target should go to 'self' IBroker", () => {
+    it("Messages with type message and no target should route IBrokerMessage to 'worker' MessageBroker.sendMessage()", () => {
         let data = "data";
         let message: IBrokerMessage = {
             envelope: {
-                type: MessagingTypes[0],
-                name: name,
-                category: MessagingCategories[0]
-            },
-            data: data
-        };
-        selfWorker.onposted = (m: MessageEvent) => { assert.deepEqual(m.data.data, data); };
-        router.next(message);
-    });
-    it("Messages with type message and target 'worker' should route IBrokerMessage to 'worker' MessageBroker.sendMessage()", () => {
-        let data = "data";
-        let message: IBrokerMessage = {
-            envelope: {
-                target: ["worker"],
                 type: MessagingTypes[0],
                 name: name,
                 category: MessagingCategories[0]
@@ -504,12 +478,11 @@ describe("makeMessagingDriver sink tests", () => {
         wWorker.onposted = (m: MessageEvent) => { assert.deepEqual(m.data.data, data); };
         router.next(message);
     });
-    it("Messages with type publish and target 'worker' should route IPortMessage to 'worker' MessageBroker.sendPublish()", () => {
+    it("Messages with type publish and no target should route IPortMessage to workers MessageBroker.sendPublish()", () => {
         let data = "data";
         let channel = new MessageChannel();
         let message: IPortMessage = {
             envelope: {
-                target: ["worker"],
                 type: MessagingTypes[1],
                 name: name,
                 category: MessagingCategories[0]
@@ -523,12 +496,11 @@ describe("makeMessagingDriver sink tests", () => {
         };
         router.next(message);
     });
-    it("Messages with type subscribe and target 'worker' should route IPortMessage to 'worker' MessageBroker.publishHandler()", () => {
+    it("Messages with type subscribe and no target should route IPortMessage to workers MessageBroker.publishHandler()", () => {
         let data = "data";
         let channel = new MessageChannel();
         let sub: IPortMessage = {
             envelope: {
-                target: ["worker"],
                 type: MessagingTypes[2],
                 name: name,
                 category: MessagingCategories[0]
@@ -538,7 +510,6 @@ describe("makeMessagingDriver sink tests", () => {
         };
         let message: IBrokerMessage = {
             envelope: {
-                target: ["worker"],
                 type: MessagingTypes[0],
                 name: "mes",
                 category: MessagingCategories[0]
@@ -559,7 +530,6 @@ describe("makeMessagingDriver sink tests", () => {
         let data = "data";
         let message: IAttachMessage = {
             envelope: {
-                target: ["worker"],
                 type: MessagingTypes[3],
                 name: name,
                 category: MessagingCategories[7]
@@ -579,7 +549,6 @@ describe("makeMessagingDriver sink tests", () => {
         let data = "data";
         let message: IAttachMessage = {
             envelope: {
-                target: ["worker"],
                 type: MessagingTypes[3],
                 name: name,
                 category: MessagingCategories[6]
@@ -589,7 +558,6 @@ describe("makeMessagingDriver sink tests", () => {
         };
         let messageDispose: IAttachMessage = {
             envelope: {
-                target: ["worker"],
                 type: MessagingTypes[3],
                 name: name,
                 category: MessagingCategories[7]
@@ -610,7 +578,6 @@ describe("makeMessagingDriver sink tests", () => {
         let data = "data";
         let message: IAttachMessage = {
             envelope: {
-                target: ["worker"],
                 type: MessagingTypes[3],
                 name: name,
                 category: MessagingCategories[1]

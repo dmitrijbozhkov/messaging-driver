@@ -1,11 +1,11 @@
 import { Listener } from "xstream";
 import { IBrokerMessage, IPortMessage, MessagingTypes, IAttachMessage, MessagingCategories } from "./AbstractBroker";
-import { MessageBrokersSetup, SinkMessages } from "./makeMessagingDriver";
+import { SinkMessages } from "./makeMessagingDriver";
 import { IBroker } from "./MessageBroker";
 export class SinkRouter implements Listener<SinkMessages> {
-    private brokers: MessageBrokersSetup;
-    constructor(brokers: MessageBrokersSetup) {
-        this.brokers = brokers;
+    private broker: IBroker;
+    constructor(broker: IBroker) {
+        this.broker = broker;
     }
     public next(m: SinkMessages) {
         switch (m.envelope.type) {
@@ -26,6 +26,7 @@ export class SinkRouter implements Listener<SinkMessages> {
     }
     public error(e: any) {}
     public complete() {}
+    /*
     private findBroker(name: string) {
         return this.brokers[name];
     }
@@ -47,24 +48,21 @@ export class SinkRouter implements Listener<SinkMessages> {
             }
         }
     }
+    */
     private handleMessage(message: IBrokerMessage) {
-        let broker: IBroker = this.getSinkBroker(message);
-        broker.sendMessage(message);
+        this.broker.sendMessage(message);
     }
     private handlePublish(publish: IPortMessage) {
-        let broker: IBroker = this.getSinkBroker(publish);
-        broker.sendPublish(publish);
+        this.broker.sendPublish(publish);
     }
     private handleSubscription(subscribe: IPortMessage) {
-        let broker: IBroker = this.getSinkBroker(subscribe);
-        broker.publishHandler(subscribe, subscribe.port);
+        this.broker.publishHandler(subscribe, subscribe.port);
     }
     private handleBroker(status: IAttachMessage) {
-        let broker: IBroker = this.getSinkBroker(status);
         if (status.envelope.category === MessagingCategories[6]) {
-            broker.attachTarget(status.target);
+            this.broker.attachTarget(status.target);
         } else if (status.envelope.category === MessagingCategories[7]) {
-            broker.disposeTarget();
+            this.broker.disposeTarget();
         } else {
             throw new Error("Wrong category");
         }

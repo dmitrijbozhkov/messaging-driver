@@ -1,9 +1,6 @@
 import { Stream } from "xstream";
 import { IBroker } from "./MessageBroker";
 import { IBrokerMessage, IPortMessage, IAttachMessage } from "./AbstractBroker";
-import { ChooseBroker } from "./QueryMessage";
+import { ChooseType } from "./QueryMessage";
 export declare type SinkMessages = IBrokerMessage | IPortMessage | IAttachMessage;
-export declare type MessageBrokersSetup = {
-    [name: string]: IBroker;
-};
-export declare function makeMessagingDriver(brokers: MessageBrokersSetup): (source: Stream<SinkMessages>) => ChooseBroker;
+export declare function makeMessagingDriver(broker: IBroker): (source: Stream<SinkMessages>) => ChooseType;
