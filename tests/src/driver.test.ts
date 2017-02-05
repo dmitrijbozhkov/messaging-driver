@@ -30,11 +30,11 @@ describe("makeMessagingDriver source tests", () => {
         let isChooseType = source instanceof ChooseType;
         assert.ok(isChooseType);
     });
-    it("source.Target().Messages() should return ChooseCategory", () => {
+    it("source.Messages() should return ChooseCategory", () => {
         let isChooseCategory = source.Messages("task") instanceof ChooseCategory;
         assert.ok(isChooseCategory);
     });
-    it("source.Target().Messages().Data() should return stream of IBrokerMessage with category data", () => {
+    it("source.Messages().Data() should return stream of IBrokerMessage with category data", () => {
         let name = "task";
         let data = "data";
         broker.attachTarget(workerTarget);
@@ -55,7 +55,7 @@ describe("makeMessagingDriver source tests", () => {
         let evt = new MessageEventMock("message", {data: message});
         worker.dispatchEvent(evt as any);
     });
-    it("source.Target().Messages().Data() should return stream of IBrokerMessage with category progress", () => {
+    it("source.Messages().Data() should return stream of IBrokerMessage with category progress", () => {
         let name = "task";
         let data = "data";
         broker.attachTarget(workerTarget);
@@ -76,7 +76,7 @@ describe("makeMessagingDriver source tests", () => {
         let evt = new MessageEventMock("message", {data: message});
         worker.dispatchEvent(evt as any);
     });
-    it("source.Target().Messages().Data() should return stream of IBrokerMessage with category cancel", () => {
+    it("source.Messages().Data() should return stream of IBrokerMessage with category cancel", () => {
         let name = "task";
         let data = "data";
         broker.attachTarget(workerTarget);
@@ -97,7 +97,7 @@ describe("makeMessagingDriver source tests", () => {
         let evt = new MessageEventMock("message", {data: message});
         worker.dispatchEvent(evt as any);
     });
-    it("source.Target().Messages().Data() should return stream of IBrokerMessage with category error", () => {
+    it("source.Messages().Data() should return stream of IBrokerMessage with category error", () => {
         let name = "task";
         let data = "data";
         broker.attachTarget(workerTarget);
@@ -118,7 +118,7 @@ describe("makeMessagingDriver source tests", () => {
         let evt = new MessageEventMock("message", {data: message});
         worker.dispatchEvent(evt as any);
     });
-    it("source.Target().Messages().Progress() should return stream of IBrokerMessage with category progressCallback", () => {
+    it("source.Messages().Progress() should return stream of IBrokerMessage with category progressCallback", () => {
         let name = "task";
         let data = "data";
         broker.attachTarget(workerTarget);
@@ -139,7 +139,7 @@ describe("makeMessagingDriver source tests", () => {
         let evt = new MessageEventMock("message", {data: message});
         worker.dispatchEvent(evt as any);
     });
-    it("source.Target().Messages().Cancel() should return stream of IBrokerMessage with category cancelCallback", () => {
+    it("source.Messages().Cancel() should return stream of IBrokerMessage with category cancelCallback", () => {
         let name = "task";
         let data = "data";
         broker.attachTarget(workerTarget);
@@ -160,7 +160,28 @@ describe("makeMessagingDriver source tests", () => {
         let evt = new MessageEventMock("message", {data: message});
         worker.dispatchEvent(evt as any);
     });
-    it("source.Target().DeadLetters() should return stream of deadletters", () => {
+    it("source.Messages().All() should return stream of all IBrokerMessage", () => {
+        let name = "task";
+        let data = "data";
+        broker.attachTarget(workerTarget);
+        let data$ = source.Messages(name).All();
+        data$.addListener({
+            next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
+            complete: () => {},
+            error: () => {}
+        });
+        let message: IBrokerMessage = {
+            envelope: {
+                type: MessagingTypes[0],
+                name: name,
+                category: MessagingCategories[3]
+            },
+            data: data
+        };
+        let evt = new MessageEventMock("message", {data: message});
+        worker.dispatchEvent(evt as any);
+    });
+    it("source.DeadLetters() should return stream of deadletters", () => {
         let name = "task";
         let data = "data";
         broker.attachTarget(workerTarget);
@@ -176,7 +197,7 @@ describe("makeMessagingDriver source tests", () => {
         let evt = new MessageEventMock("message", {data: message});
         worker.dispatchEvent(evt as any);
     });
-    it("source.Target().Errors() should return stream of ErrorEvents", () => {
+    it("source.Errors() should return stream of ErrorEvents", () => {
         let name = "task";
         let data = "data";
         broker.attachTarget(workerTarget);
@@ -195,7 +216,7 @@ describe("makeMessagingDriver source tests", () => {
         });
         worker.dispatchEvent(errEvent as any);
     });
-    it("source.Target().LifeCycle() should return life cycle messages", () => {
+    it("source.LifeCycle() should return life cycle messages", () => {
         let data$ = source.LifeCycle();
         data$.addListener({
             next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[0]); },
@@ -204,11 +225,11 @@ describe("makeMessagingDriver source tests", () => {
         });
         broker.attachTarget(workerTarget);
     });
-    it("source.Target().Subscribe() should return SubscribeChooseType", () => {
+    it("source.Subscribe() should return SubscribeChooseType", () => {
         let subscription = source.Subscribe("sub");
         assert.ok(subscription instanceof SubscribeChooseType);
     });
-    it("source.Target().Subscribe().Messages().Data() should return stream of IBrokerMessage with category data", () => {
+    it("source.Subscribe().Messages().Data() should return stream of IBrokerMessage with category data", () => {
         let channel = new MessageChannel();
         let name = "task";
         let data = "data";
@@ -240,7 +261,7 @@ describe("makeMessagingDriver source tests", () => {
         worker.dispatchEvent(evt as any);
         channel.port2.postMessage(message);
     });
-    it("source.Target().Subscribe().Messages().Data() should return stream of IBrokerMessage with category progress", () => {
+    it("source.Subscribe().Messages().Data() should return stream of IBrokerMessage with category progress", () => {
         let channel = new MessageChannel();
         let name = "task";
         let data = "data";
@@ -272,7 +293,7 @@ describe("makeMessagingDriver source tests", () => {
         worker.dispatchEvent(evt as any);
         channel.port2.postMessage(message);
     });
-    it("source.Target().Subscribe().Messages().Data() should return stream of IBrokerMessage with category cancel", () => {
+    it("source.Subscribe().Messages().Data() should return stream of IBrokerMessage with category cancel", () => {
         let channel = new MessageChannel();
         let name = "task";
         let data = "data";
@@ -304,7 +325,7 @@ describe("makeMessagingDriver source tests", () => {
         worker.dispatchEvent(evt as any);
         channel.port2.postMessage(message);
     });
-    it("source.Target().Subscribe().Messages().Data() should return stream of IBrokerMessage with category error", () => {
+    it("source.Subscribe().Messages().Data() should return stream of IBrokerMessage with category error", () => {
         let channel = new MessageChannel();
         let name = "task";
         let data = "data";
@@ -336,7 +357,7 @@ describe("makeMessagingDriver source tests", () => {
         worker.dispatchEvent(evt as any);
         channel.port2.postMessage(message);
     });
-    it("source.Target().Subscribe().Messages().Progress() should return stream of IBrokerMessage with category progressCallback", () => {
+    it("source.Subscribe().Messages().Progress() should return stream of IBrokerMessage with category progressCallback", () => {
         let channel = new MessageChannel();
         let name = "task";
         let data = "data";
@@ -368,7 +389,7 @@ describe("makeMessagingDriver source tests", () => {
         worker.dispatchEvent(evt as any);
         channel.port2.postMessage(message);
     });
-    it("source.Target().Subscribe().Messages().Data() should return stream of IBrokerMessage with category cancelCallback", () => {
+    it("source.Subscribe().Messages().Data() should return stream of IBrokerMessage with category cancelCallback", () => {
         let channel = new MessageChannel();
         let name = "task";
         let data = "data";
@@ -400,7 +421,7 @@ describe("makeMessagingDriver source tests", () => {
         worker.dispatchEvent(evt as any);
         channel.port2.postMessage(message);
     });
-    it("source.Target().Subscribe().DeadLetters() should return stream of MessageEvent", () => {
+    it("source.Subscribe().DeadLetters() should return stream of MessageEvent", () => {
         let channel = new MessageChannel();
         let data = "data";
         let sub = "sub";
@@ -426,7 +447,7 @@ describe("makeMessagingDriver source tests", () => {
         worker.dispatchEvent(evt as any);
         channel.port2.postMessage(message);
     });
-    it("source.Target().Subscribe().LifeCycle() should return stream of life cycle messages", () => {
+    it("source.Subscribe().LifeCycle() should return stream of life cycle messages", () => {
         let channel = new MessageChannel();
         let sub = "sub";
         broker.attachTarget(workerTarget);

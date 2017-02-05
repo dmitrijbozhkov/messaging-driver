@@ -20,4 +20,5 @@ export declare class ChooseCategory {
     Data(): Stream<IBrokerMessage>;
     Progress(): Stream<IBrokerMessage>;
     Cancel(): Stream<IBrokerMessage>;
+    All(): Stream<IBrokerMessage>;
 }

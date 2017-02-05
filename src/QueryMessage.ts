@@ -71,4 +71,7 @@ export class ChooseCategory {
     public Cancel() {
         return this.context.filter((m: IBrokerMessage) => m.envelope.category === MessagingCategories[5]);
     }
+    public All() {
+        return this.context;
+    }
 }
