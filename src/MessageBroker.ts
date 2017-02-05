@@ -1,4 +1,4 @@
-import {IBrokerMessage, MessagingTypes, AbstractMessageProducer, IPortMessage, MessagingCategories, IProgressMessage, ICancelMessage, LifeCycleEvents} from "./AbstractBroker";
+import {IBrokerMessage, MessagingTypes, AbstractMessageProducer, IPortMessage, MessagingCategories, IProgressMessage, ICancelMessage, LifeCycleEvents, Transferable} from "./AbstractBroker";
 import {Producer, Listener} from "xstream";
 import {WorkerTarget, PortTarget, TargetRoute, IMessageTarget} from "./MessageTargets";
 import {WorkerMock} from "./WorkerMock";

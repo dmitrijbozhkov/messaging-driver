@@ -9,20 +9,24 @@ export interface IEnvelope {
     origin?: string;
 }
 export type StatusCallback = (status: any) => void;
-export interface IBrokerMessage {
+export type Transferable = MessagePort | ArrayBuffer;
+export interface IMessage {
     envelope: IEnvelope;
     data: any;
 }
-export interface IProgressMessage extends IBrokerMessage {
+export interface IBrokerMessage extends IMessage {
+    transfer?: Transferable[];
+}
+export interface IProgressMessage extends IMessage {
     progress: StatusCallback;
 }
-export interface ICancelMessage extends IBrokerMessage {
+export interface ICancelMessage extends IMessage {
     cancel: StatusCallback;
 }
-export interface IPortMessage extends IBrokerMessage {
+export interface IPortMessage extends IMessage {
     port: MessagePort;
 }
-export interface IAttachMessage extends IBrokerMessage {
+export interface IAttachMessage extends IMessage {
     target: IMessageTarget;
 }
 export enum MessagingTypes {

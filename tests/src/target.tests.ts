@@ -140,6 +140,19 @@ describe("WorkerTarget tests", () => {
         };
         workerTarget.makeMessage(message);
     });
+    it("makeMessage() should post transferable list", () => {
+        let trans = [new ArrayBuffer(64)];
+        worker.onposted = (e: MessageEvent) => { assert.deepEqual(e.data.data, trans[0]); };
+        let message: IBrokerMessage = {
+            envelope: {
+                type: MessagingTypes[0],
+                name: "TestPromise"
+            },
+            data: trans[0],
+            transfer: trans
+        };
+        workerTarget.makeMessage(message);
+    });
     it("makeMessage() should throw exception if publish type specified", () => {
         let message: IBrokerMessage = {
             envelope: {
@@ -246,6 +259,19 @@ describe("PortTarget tests", () => {
                 name: "TestPromise"
             },
             data: data
+        };
+        portTarget.makeMessage(message);
+    });
+    it("makeMessage() should post transferable list", () => {
+        let trans = [new MessageChannel().port1];
+        channel.port2.onmessage = (e: MessageEvent) => { assert.deepEqual(e.data.data, trans[0]); };
+        let message: IBrokerMessage = {
+            envelope: {
+                type: MessagingTypes[0],
+                name: "TestPromise"
+            },
+            data: trans[0],
+            transfer: trans
         };
         portTarget.makeMessage(message);
     });
@@ -358,6 +384,20 @@ describe("FrameTarget tests", () => {
                 origin: "www.google.com"
             },
             data: data
+        };
+        frameTarget.makeMessage(message);
+    });
+    it("makeMessage() should post transferable list", () => {
+        let trans = [new ArrayBuffer(64)];
+        frame.onposted = (e: MessageEvent) => { assert.deepEqual(e.data.data, trans[0]); };
+        let message: IBrokerMessage = {
+            envelope: {
+                type: MessagingTypes[0],
+                name: "TestPromise",
+                origin: "www.google.com"
+            },
+            data: trans[0],
+            transfer: trans
         };
         frameTarget.makeMessage(message);
     });

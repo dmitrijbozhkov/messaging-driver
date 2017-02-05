@@ -1,4 +1,4 @@
-import {IBrokerMessage, MessagingCategories, MessagingTypes, IEnvelope, IPortMessage} from "./AbstractBroker";
+import {IBrokerMessage, MessagingCategories, MessagingTypes, IEnvelope, IPortMessage, Transferable} from "./AbstractBroker";
 export interface IMessageHandler {
     onerror: (error: ErrorEvent) => void;
     ondeadletter: (data: MessageEvent) => void;
@@ -67,9 +67,9 @@ export class WorkerTarget implements IMessageTarget {
     public makeMessage(message: IBrokerMessage) {
         if (this.checkIsMessage(message.envelope.type)) {
             if (message.envelope.bare) {
-                this.worker.postMessage(message.data);
+                this.worker.postMessage(message.data, message.transfer);
             } else {
-                this.worker.postMessage(message);
+                this.worker.postMessage(message, message.transfer);
             }
         } else {
             throw new Error("Wrong message type");
@@ -114,9 +114,9 @@ export class PortTarget implements IMessageTarget {
     public makeMessage(message: IBrokerMessage) {
         if (this.checkIsMessage(message.envelope.type)) {
             if (message.envelope.bare) {
-                this.port.postMessage(message.data);
+                this.port.postMessage(message.data, message.transfer);
             } else {
-                this.port.postMessage(message);
+                this.port.postMessage(message, message.transfer);
             }
         } else {
             throw new Error("Wrong message type");
@@ -162,9 +162,9 @@ export class FrameTarget implements IMessageTarget {
         if (this.checkIsMessage(message.envelope.type)) {
             if (message.envelope.origin) {
                 if (message.envelope.bare) {
-                    this.frame.postMessage(message.data, message.envelope.origin);
+                    this.frame.postMessage(message.data, message.envelope.origin, message.transfer);
                 } else {
-                    this.frame.postMessage(message, message.envelope.origin);
+                    this.frame.postMessage(message, message.envelope.origin, message.transfer);
                 }
             } else {
                 throw new Error("No targetOrigin specified");
