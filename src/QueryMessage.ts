@@ -25,8 +25,7 @@ export class SubscribeChooseType {
         this.context = listener;
     }
     public Messages(name: string) {
-        let producer = this.context.attachMessage(new NotifyProducer<IBrokerMessage>(), name);
-        let stream = Stream.create(producer);
+        let stream = this.context.attachMessage(name);
         return new ChooseCategory(stream);
     }
     public Subscribe(name: string) {
@@ -34,12 +33,12 @@ export class SubscribeChooseType {
         return new SubscribeChooseType(broker);
     }
     public DeadLetters() {
-        let producer = this.context.attachDeadLetter(new NotifyProducer<MessageEvent>());
-        return Stream.create(producer);
+        let stream = this.context.attachDeadLetter();
+        return stream;
     }
     public LifeCycle() {
-        let producer = this.context.attachLifeCycle(new NotifyProducer<string>());
-        return Stream.create(producer);
+        let stream = this.context.attachLifeCycle();
+        return stream;
     }
 }
 export class ChooseType extends SubscribeChooseType {
@@ -49,8 +48,8 @@ export class ChooseType extends SubscribeChooseType {
         this.eContext = listener;
     }
     public Errors() {
-        let producer = this.eContext.attachError(new NotifyProducer<ErrorEvent>());
-        return Stream.create(producer);
+        let stream = this.eContext.attachError();
+        return stream;
     }
 }
 export class ChooseCategory {

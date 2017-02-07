@@ -1,5 +1,5 @@
 import {IBrokerMessage, MessagingTypes, AbstractMessageProducer, IPortMessage, MessagingCategories, IProgressMessage, ICancelMessage, LifeCycleEvents, Transferable} from "./AbstractBroker";
-import {Producer, Listener} from "xstream";
+import {Producer, Listener, Stream} from "xstream";
 import {WorkerTarget, PortTarget, TargetRoute, IMessageTarget} from "./MessageTargets";
 import {WorkerMock} from "./WorkerMock";
 export class NotifyProducer<T> implements AbstractMessageProducer<T> {
@@ -25,20 +25,25 @@ export interface IBroker {
     publishHandler: (publish: IBrokerMessage, port: MessagePort) => void;
     attachTarget: (target: IMessageTarget) => void;
     disposeTarget: () => void;
-    attachLifeCycle: (producer: NotifyProducer<string>) => NotifyProducer<string>;
-    attachMessage: (producer: NotifyProducer<IBrokerMessage>, name: string) => NotifyProducer<IBrokerMessage>;
-    attachDeadLetter: (producer: NotifyProducer<MessageEvent>) => NotifyProducer<MessageEvent>;
-    attachError: (producer: NotifyProducer<ErrorEvent>) => NotifyProducer<ErrorEvent>;
+    attachLifeCycle: () => Stream<string>;
+    attachMessage: (name: string) => Stream<IBrokerMessage>;
+    attachDeadLetter: () => Stream<MessageEvent>;
+    attachError: () => Stream<ErrorEvent>;
 }
-type ProducerCollection<T> = { producer: AbstractMessageProducer<T>, name: string }[];
+type ProducerCollection<T> = { producer: AbstractMessageProducer<T>, name: string };
 type BrokerCollection = { broker: IBroker, name: string };
 export class MessageBroker implements IBroker {
     private target: IMessageTarget;
-    private MessageProducers: ProducerCollection<IBrokerMessage> = [];
-    private ErrorProducers: (AbstractMessageProducer<ErrorEvent>)[] = [];
-    private DeadLetterProducers: (AbstractMessageProducer<MessageEvent>)[] = [];
-    private LifeCycleProducers: (AbstractMessageProducer<string>)[] = [];
+    private MessageProducers: ProducerCollection<IBrokerMessage>[] = [];
+    private ErrorProducer: AbstractMessageProducer<ErrorEvent>;
+    private DeadLetterProducer: AbstractMessageProducer<MessageEvent>;
+    private LifeCycleProducer: AbstractMessageProducer<string>;
     private PortBrokers: BrokerCollection[] = [];
+    constructor() {
+        this.ErrorProducer = new NotifyProducer<ErrorEvent>();
+        this.DeadLetterProducer = new NotifyProducer<MessageEvent>();
+        this.LifeCycleProducer = new NotifyProducer<string>();
+    }
     private messageHandler(message: IBrokerMessage) {
         if (message.envelope.category === MessagingCategories[1]) {
             (message as IProgressMessage).progress = this.reportProgress(message.envelope.name);
@@ -111,7 +116,7 @@ export class MessageBroker implements IBroker {
             }
         }
     }
-    private findBroker(name: string) {
+    private findBroker(name: string): BrokerCollection {
         let broker;
         let i = 0;
         for (i = 0; i < this.PortBrokers.length; i += 1) {
@@ -155,8 +160,8 @@ export class MessageBroker implements IBroker {
         this.target = (target as WorkerTarget);
         target.onmessage = (message: IBrokerMessage) => { this.messageHandler(message); };
         target.onpublish = (publish: IBrokerMessage, port: MessagePort) => this.publishHandler(publish, port);
-        target.onerror = (e: ErrorEvent) => this.ErrorProducers.forEach((producer) => producer.trigger(e));
-        target.ondeadletter = (letter: MessageEvent) => this.DeadLetterProducers.forEach((producer) => producer.trigger(letter));
+        target.onerror = (e: ErrorEvent) => this.ErrorProducer.trigger(e);
+        target.ondeadletter = (letter: MessageEvent) => this.DeadLetterProducer.trigger(letter)
         this.fireLifeCycleEvent(LifeCycleEvents[0]);
     }
     public disposeTarget() {
@@ -165,23 +170,35 @@ export class MessageBroker implements IBroker {
         this.PortBrokers = [];
         this.fireLifeCycleEvent(LifeCycleEvents[1]);
     }
+    private findProducers(name: string): ProducerCollection<IBrokerMessage> {
+        let broker;
+        let i = 0;
+        for (i = 0; i < this.MessageProducers.length; i += 1) {
+            if (this.MessageProducers[i].name === name) {
+                broker = this.MessageProducers[i];
+                break;
+            }
+        }
+        return broker;
+    }
     private fireLifeCycleEvent(status: string) {
-        this.LifeCycleProducers.forEach((producer) => producer.trigger(status));
+        this.LifeCycleProducer.trigger(status)
     }
-    public attachLifeCycle(producer: NotifyProducer<string>) {
-        this.LifeCycleProducers.push(producer);
-        return producer;
+    public attachLifeCycle() {
+        return Stream.create(this.LifeCycleProducer);
     }
-    public attachMessage(producer: NotifyProducer<IBrokerMessage>, name: string) {
-        this.MessageProducers.push({ producer: producer, name: name });
-        return producer;
+    public attachMessage(name: string) {
+        let producer = this.findProducers(name);
+        if (!producer) {
+            producer = { producer: new NotifyProducer<IBrokerMessage>(), name: name };
+            this.MessageProducers.push(producer);
+        }
+        return Stream.create(producer.producer);
     }
-    public attachDeadLetter(producer: NotifyProducer<MessageEvent>) {
-        this.DeadLetterProducers.push(producer);
-        return producer;
+    public attachDeadLetter() {
+        return Stream.create(this.DeadLetterProducer);
     }
-    public attachError(producer: NotifyProducer<ErrorEvent>) {
-        this.ErrorProducers.push(producer);
-        return producer;
+    public attachError() {
+        return Stream.create(this.ErrorProducer);
     }
 }

@@ -1,5 +1,5 @@
 import { IBrokerMessage, AbstractMessageProducer, IPortMessage } from "./AbstractBroker";
-import { Listener } from "xstream";
+import { Listener, Stream } from "xstream";
 import { IMessageTarget } from "./MessageTargets";
 export declare class NotifyProducer<T> implements AbstractMessageProducer<T> {
     listeners: Listener<T>[];
@@ -14,18 +14,19 @@ export interface IBroker {
     publishHandler: (publish: IBrokerMessage, port: MessagePort) => void;
     attachTarget: (target: IMessageTarget) => void;
     disposeTarget: () => void;
-    attachLifeCycle: (producer: NotifyProducer<string>) => NotifyProducer<string>;
-    attachMessage: (producer: NotifyProducer<IBrokerMessage>, name: string) => NotifyProducer<IBrokerMessage>;
-    attachDeadLetter: (producer: NotifyProducer<MessageEvent>) => NotifyProducer<MessageEvent>;
-    attachError: (producer: NotifyProducer<ErrorEvent>) => NotifyProducer<ErrorEvent>;
+    attachLifeCycle: () => Stream<string>;
+    attachMessage: (name: string) => Stream<IBrokerMessage>;
+    attachDeadLetter: () => Stream<MessageEvent>;
+    attachError: () => Stream<ErrorEvent>;
 }
 export declare class MessageBroker implements IBroker {
     private target;
     private MessageProducers;
-    private ErrorProducers;
-    private DeadLetterProducers;
-    private LifeCycleProducers;
+    private ErrorProducer;
+    private DeadLetterProducer;
+    private LifeCycleProducer;
     private PortBrokers;
+    constructor();
     private messageHandler(message);
     private reportProgress(name);
     private reportCancel(name);
@@ -33,12 +34,13 @@ export declare class MessageBroker implements IBroker {
     sendPublish(publish: IPortMessage): void;
     private findBroker(name);
     publishHandler(publish: IBrokerMessage, port: MessagePort): void;
-    subscribeHandler(name: string): any;
+    subscribeHandler(name: string): IBroker;
     attachTarget(target: IMessageTarget): void;
     disposeTarget(): void;
+    private findProducers(name);
     private fireLifeCycleEvent(status);
-    attachLifeCycle(producer: NotifyProducer<string>): NotifyProducer<string>;
-    attachMessage(producer: NotifyProducer<IBrokerMessage>, name: string): NotifyProducer<IBrokerMessage>;
-    attachDeadLetter(producer: NotifyProducer<MessageEvent>): NotifyProducer<MessageEvent>;
-    attachError(producer: NotifyProducer<ErrorEvent>): NotifyProducer<ErrorEvent>;
+    attachLifeCycle(): Stream<string>;
+    attachMessage(name: string): Stream<IBrokerMessage>;
+    attachDeadLetter(): Stream<MessageEvent>;
+    attachError(): Stream<ErrorEvent>;
 }

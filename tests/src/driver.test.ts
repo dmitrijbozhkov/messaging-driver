@@ -539,8 +539,7 @@ describe("makeMessagingDriver sink tests", () => {
         };
         router.next(sub);
         let subBroker: IBroker = wBroker.subscribeHandler(name);
-        let notify = new NotifyProducer<IBrokerMessage>();
-        Stream.create(subBroker.attachMessage(notify, "mes")).addListener({
+        subBroker.attachMessage("mes").addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             error: () => {},
             complete: () => {}
@@ -558,8 +557,7 @@ describe("makeMessagingDriver sink tests", () => {
             data: data,
             target: null
         };
-        let notify = new NotifyProducer<string>();
-        Stream.create(wBroker.attachLifeCycle(notify)).addListener({
+        wBroker.attachLifeCycle().addListener({
             next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[1]); },
             error: () => {},
             complete: () => {}
@@ -587,8 +585,7 @@ describe("makeMessagingDriver sink tests", () => {
             target: null
         };
         router.next(messageDispose);
-        let notify = new NotifyProducer<string>();
-        Stream.create(wBroker.attachLifeCycle(notify)).addListener({
+        wBroker.attachLifeCycle().addListener({
             next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[0]); },
             error: () => {},
             complete: () => {}

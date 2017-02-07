@@ -1,6 +1,6 @@
 import * as assert from "assert";
 import {IBrokerMessage, MessagingTypes, MessagingCategories, IProgressMessage, ICancelMessage, LifeCycleEvents, IPortMessage} from "../../lib/AbstractBroker";
-import {MessageBroker, NotifyProducer} from "../../lib/MessageBroker";
+import {MessageBroker, NotifyProducer, IBroker} from "../../lib/MessageBroker";
 import {WorkerMock, MessageEventMock, ErrorEventMock} from "../../lib/WorkerMock";
 import {WorkerTarget, TargetRoute} from "../../lib/MessageTargets";
 import {Stream} from "xstream";
@@ -27,16 +27,10 @@ describe("MessageBroker tests", () => {
             data: "data"
         };
     });
-    it("producerFactory() should reurn NotifyProducer", () => {
-        let notify = new NotifyProducer<IBrokerMessage>();
-        let producer = broker.attachMessage(notify, "task");
-        assert.deepEqual(producer instanceof NotifyProducer, true);
-    });
     it("Messages with message type and 'task' name should be routed to message producers with name 'task' ", () => {
         let evt = new MessageEventMock("message", {data: message});
-        let notify = new NotifyProducer<IBrokerMessage>();
-        let producer = broker.attachMessage(notify, "task");
-        let event$ = Stream.create(producer).addListener({
+        let producer = broker.attachMessage("task");
+        let event$ = producer.addListener({
             next: (letter: IBrokerMessage) => { assert.deepEqual(letter.data, "data"); },
             complete: () => {},
             error: () => {}
@@ -46,9 +40,8 @@ describe("MessageBroker tests", () => {
     it("Dead letters should trigger all deadletter producers", () => {
         delete message.envelope;
         let evt = new MessageEventMock("message", {data: message});
-        let notify = new NotifyProducer<MessageEvent>();
-        let producer = broker.attachDeadLetter(notify);
-        let event$ = Stream.create(producer).addListener({
+        let producer = broker.attachDeadLetter();
+        let event$ = producer.addListener({
             next: (letter: MessageEvent) => { assert.deepEqual(letter.data.data, "data"); },
             complete: () => {},
             error: () => {}
@@ -63,9 +56,8 @@ describe("MessageBroker tests", () => {
             colno: 18,
             type: "error"
         };
-        let notify = new NotifyProducer<ErrorEvent>();
-        let producer = broker.attachError(notify);
-        let event$ = Stream.create(producer).addListener({
+        let producer = broker.attachError();
+        let event$ = producer.addListener({
             next: (err: ErrorEvent) => { assert.deepEqual(err.filename, errEvent.filename); },
             complete: () => {},
             error: () => {}
@@ -84,9 +76,8 @@ describe("MessageBroker tests", () => {
             data: "data"
         };
         let subscription = broker.subscribeHandler(name);
-        let notify = new NotifyProducer<IBrokerMessage>();
-        let producer = subscription.attachMessage(notify, "task");
-        let event$ = Stream.create(producer).addListener({
+        let producer = subscription.attachMessage("task");
+        let event$ =producer.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, message.data); },
             complete: () => {},
             error: () => {}
@@ -95,7 +86,7 @@ describe("MessageBroker tests", () => {
         worker.dispatchEvent(evt as any);
         channel.port2.postMessage(message);
     });
-    it("subscribeHandler() should return MessageBroker that on attachDeadLetter() returns producer that triggers on every bad message published by MessagePort", () => {
+    it("subscribeHandler() should return IBroker that on attachDeadLetter() returns producer that triggers on every bad message published by MessagePort", () => {
         let channel = new MessageChannel();
         let name = "test";
         delete message.envelope;
@@ -107,10 +98,9 @@ describe("MessageBroker tests", () => {
             },
             data: "data"
         };
-        let subscription: MessageBroker = broker.subscribeHandler(name);
-        let notify = new NotifyProducer<MessageEvent>();
-        let producer = subscription.attachDeadLetter(notify);
-        let event$ = Stream.create(producer).addListener({
+        let subscription: IBroker = broker.subscribeHandler(name);
+        let producer = subscription.attachDeadLetter();
+        let event$ = producer.addListener({
             next: (m: MessageEvent) => { assert.deepEqual(m.data.data, message.data); },
             complete: () => {},
             error: () => {}
@@ -122,9 +112,8 @@ describe("MessageBroker tests", () => {
     it("Messages with category 'progress' should get a progress callback", () => {
         message.envelope.category = MessagingCategories[1];
         let evt = new MessageEventMock("message", {data: message});
-        let notify = new NotifyProducer<IBrokerMessage>();
-        let producer = broker.attachMessage(notify, "task");
-        let event$ = Stream.create(producer).addListener({
+        let producer = broker.attachMessage("task");
+        let event$ = producer.addListener({
             next: (m: IProgressMessage) => { assert.deepEqual(typeof m.progress, "function"); },
             complete: () => {},
             error: () => {}
@@ -134,9 +123,8 @@ describe("MessageBroker tests", () => {
     it("progress callback should post messages to target with category progressCallback", () => {
         message.envelope.category = MessagingCategories[1];
         let evt = new MessageEventMock("message", {data: message});
-        let notify = new NotifyProducer<IBrokerMessage>();
-        let producer = broker.attachMessage(notify, "task");
-        let event$ = Stream.create(producer).addListener({
+        let producer = broker.attachMessage("task");
+        let event$ = producer.addListener({
             next: (m: IProgressMessage) => { m.progress("proceding"); },
             complete: () => {},
             error: () => {}
@@ -150,9 +138,8 @@ describe("MessageBroker tests", () => {
     it("Messages with category 'cancel' should get a cancel callback", () => {
         message.envelope.category = MessagingCategories[2];
         let evt = new MessageEventMock("message", {data: message});
-        let notify = new NotifyProducer<IBrokerMessage>();
-        let producer = broker.attachMessage(notify, "task");
-        let event$ = Stream.create(producer).addListener({
+        let producer = broker.attachMessage("task");
+        let event$ = producer.addListener({
             next: (m: ICancelMessage) => { assert.deepEqual(typeof m.cancel, "function"); },
             complete: () => {},
             error: () => {}
@@ -162,9 +149,8 @@ describe("MessageBroker tests", () => {
     it("cancel callback should post message to target with category cancaelCallback", () => {
         message.envelope.category = MessagingCategories[2];
         let evt = new MessageEventMock("message", {data: message});
-        let notify = new NotifyProducer<IBrokerMessage>();
-        let producer = broker.attachMessage(notify, "task");
-        let event$ = Stream.create(producer).addListener({
+        let producer = broker.attachMessage("task");
+        let event$ = producer.addListener({
             next: (m: ICancelMessage) => { m.cancel("proceding"); },
             complete: () => {},
             error: () => {}
@@ -239,10 +225,9 @@ describe("MessageBroker tests", () => {
         broker.sendPublish(message as any);
     });
     it("attachLifeCycle() should return producer which triggers on attachTarget() with message initialized", () => {
-        let notify = new NotifyProducer<string>();
-        let producer = broker.attachLifeCycle(notify);
+        let producer = broker.attachLifeCycle();
         broker.disposeTarget();
-        let event$ = Stream.create(producer).addListener({
+        let event$ = producer.addListener({
             next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[0]); },
             complete: () => {},
             error: () => {}
@@ -250,9 +235,8 @@ describe("MessageBroker tests", () => {
         broker.attachTarget(workerTarget);
     });
     it("attachLifeCycle() should return producer which triggers on dispose() with message disposed", () => {
-        let notify = new NotifyProducer<string>();
-        let producer = broker.attachLifeCycle(notify);
-        let event$ = Stream.create(producer).addListener({
+        let producer = broker.attachLifeCycle();
+        let event$ = producer.addListener({
             next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[1]); },
             complete: () => {},
             error: () => {}
