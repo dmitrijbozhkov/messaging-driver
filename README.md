@@ -1,3 +1,5 @@
+# Messagng API for cycle.js
+Cycle.js driver for working with browser messaging API.
 ## Features:
 - Send messages to Web Workers
 - Send messages to Iframes
