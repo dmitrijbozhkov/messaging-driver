@@ -77,7 +77,7 @@ describe("MessageBroker tests", () => {
         };
         let subscription = broker.subscribeHandler(name);
         let producer = subscription.attachMessage("task");
-        let event$ =producer.addListener({
+        let event$ = producer.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, message.data); },
             complete: () => {},
             error: () => {}

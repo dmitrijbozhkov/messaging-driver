@@ -2,7 +2,12 @@ import { Listener } from "xstream";
 import { IBrokerMessage, IPortMessage, MessagingTypes, IAttachMessage, MessagingCategories } from "./AbstractBroker";
 import { SinkMessages } from "./makeMessagingDriver";
 import { IBroker } from "./MessageBroker";
+/**
+ * Class that routes messages that will be send to IBroker class
+ * @constructor Takes IBroker class
+ */
 export class SinkRouter implements Listener<SinkMessages> {
+    /** Broker which will get messages */
     private broker: IBroker;
     constructor(broker: IBroker) {
         this.broker = broker;
@@ -26,38 +31,31 @@ export class SinkRouter implements Listener<SinkMessages> {
     }
     public error(e: any) {}
     public complete() {}
-    /*
-    private findBroker(name: string) {
-        return this.brokers[name];
-    }
-    private getSinkBroker(message: SinkMessages) {
-        let broker: IBroker;
-        if (message.envelope.target) {
-            broker = this.findBroker(message.envelope.target.splice(0, 1)[0]);
-            if (broker) {
-                return broker;
-            } else {
-                throw new Error("No such target");
-            }
-        } else {
-            broker = this.findBroker("self");
-            if (broker) {
-                return broker;
-            } else {
-                throw new Error("No self target");
-            }
-        }
-    }
-    */
+    /**
+     * Handles message with type message
+     * @param message IBrokerMessage that will be send to broker
+     */
     private handleMessage(message: IBrokerMessage) {
         this.broker.sendMessage(message);
     }
+    /**
+     * Handles publish messages
+     * @param publish Publish message that will send port
+     */
     private handlePublish(publish: IPortMessage) {
         this.broker.sendPublish(publish);
     }
+    /**
+     * Handles subscription to a port
+     * @param subscribe Message with port to subscribe to
+     */
     private handleSubscription(subscribe: IPortMessage) {
         this.broker.publishHandler(subscribe, subscribe.port);
     }
+    /**
+     * Handles broker lifecycle messages
+     * @param status Message with status
+     */
     private handleBroker(status: IAttachMessage) {
         if (status.envelope.category === MessagingCategories[6]) {
             this.broker.attachTarget(status.target);

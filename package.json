@@ -10,6 +10,7 @@
     "watch-all": "start npm run watch-lib && npm run watch-test",
     "build-lib": "tsc -p app.tsconfig.json",
     "build-test": "webpack --cache --display-error-details",
+    "build-docs":  "typedoc --tsconfig ./app.tsconfig.json --out ./docs/ --theme minimal --mode modules --readme ./docs.readme.md",
     "build-all": "npm run build-lib && npm run build-test",
     "test": "mocha-phantomjs ./tests/runner.html"
   },
@@ -39,6 +40,7 @@
     "raw-loader": "^0.5.1",
     "ts-loader": "^1.3.3",
     "tslint": "^4.3.1",
+    "typedoc": "^0.5.5",
     "typescript": "^2.1.5",
     "typings": "^1.3.1",
     "webpack": "^1.14.0"
