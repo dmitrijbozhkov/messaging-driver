@@ -118,11 +118,11 @@ describe("makeMessagingDriver source tests", () => {
         let evt = new MessageEventMock("message", {data: message});
         worker.dispatchEvent(evt as any);
     });
-    it("source.Messages().Progress() should return stream of IBrokerMessage with category progressCallback", () => {
+    it("source.Messages().Status() should return stream of IBrokerMessage with category progressCallback", () => {
         let name = "task";
         let data = "data";
         broker.attachTarget(workerTarget);
-        let data$ = source.Messages(name).Progress();
+        let data$ = source.Messages(name).Status();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -132,28 +132,7 @@ describe("makeMessagingDriver source tests", () => {
             envelope: {
                 type: MessagingTypes[0],
                 name: name,
-                category: MessagingCategories[4]
-            },
-            data: data
-        };
-        let evt = new MessageEventMock("message", {data: message});
-        worker.dispatchEvent(evt as any);
-    });
-    it("source.Messages().Cancel() should return stream of IBrokerMessage with category cancelCallback", () => {
-        let name = "task";
-        let data = "data";
-        broker.attachTarget(workerTarget);
-        let data$ = source.Messages(name).Cancel();
-        data$.addListener({
-            next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
-            complete: () => {},
-            error: () => {}
-        });
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: name,
-                category: MessagingCategories[5]
+                category: MessagingCategories[3]
             },
             data: data
         };
@@ -357,13 +336,13 @@ describe("makeMessagingDriver source tests", () => {
         worker.dispatchEvent(evt as any);
         channel.port2.postMessage(message);
     });
-    it("source.Subscribe().Messages().Progress() should return stream of IBrokerMessage with category progressCallback", () => {
+    it("source.Subscribe().Messages().Status() should return stream of IBrokerMessage with category progressCallback", () => {
         let channel = new MessageChannel();
         let name = "task";
         let data = "data";
         let sub = "sub";
         broker.attachTarget(workerTarget);
-        let data$ = source.Subscribe(sub).Messages(name).Progress();
+        let data$ = source.Subscribe(sub).Messages(name).Status();
         data$.addListener({
             next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
             complete: () => {},
@@ -373,39 +352,7 @@ describe("makeMessagingDriver source tests", () => {
             envelope: {
                 type: MessagingTypes[0],
                 name: name,
-                category: MessagingCategories[4]
-            },
-            data: data
-        };
-        let publishMessage: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: sub,
-                category: MessagingCategories[0]
-            },
-            data: "data"
-        };
-        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
-        worker.dispatchEvent(evt as any);
-        channel.port2.postMessage(message);
-    });
-    it("source.Subscribe().Messages().Data() should return stream of IBrokerMessage with category cancelCallback", () => {
-        let channel = new MessageChannel();
-        let name = "task";
-        let data = "data";
-        let sub = "sub";
-        broker.attachTarget(workerTarget);
-        let data$ = source.Subscribe(sub).Messages(name).Cancel();
-        data$.addListener({
-            next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
-            complete: () => {},
-            error: () => {}
-        });
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: name,
-                category: MessagingCategories[5]
+                category: MessagingCategories[3]
             },
             data: data
         };
@@ -552,7 +499,7 @@ describe("makeMessagingDriver sink tests", () => {
             envelope: {
                 type: MessagingTypes[3],
                 name: name,
-                category: MessagingCategories[7]
+                category: MessagingCategories[5]
             },
             data: data,
             target: null
@@ -570,7 +517,7 @@ describe("makeMessagingDriver sink tests", () => {
             envelope: {
                 type: MessagingTypes[3],
                 name: name,
-                category: MessagingCategories[6]
+                category: MessagingCategories[4]
             },
             data: data,
             target: selfTarget
@@ -579,7 +526,7 @@ describe("makeMessagingDriver sink tests", () => {
             envelope: {
                 type: MessagingTypes[3],
                 name: name,
-                category: MessagingCategories[7]
+                category: MessagingCategories[5]
             },
             data: data,
             target: null

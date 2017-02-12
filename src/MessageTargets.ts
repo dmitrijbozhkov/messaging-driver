@@ -138,12 +138,8 @@ export class WorkerTarget implements IMessageTarget {
         this.worker.onmessage = (e: MessageEvent) => { this.router.route(e); };
         this.worker.onerror = (e: ErrorEvent) => this.onerror(e);
     }
-    /** Checks if incoming action is message */
-    private checkIsMessage(type: string) {
-        return type === MessagingTypes[0];
-    }
     public makeMessage(message: IBrokerMessage) {
-        if (this.checkIsMessage(message.envelope.type)) {
+        if (message.envelope.type === MessagingTypes[0]) {
             if (message.envelope.bare) {
                 this.worker.postMessage(message.data, message.transfer);
             } else {
@@ -191,11 +187,8 @@ export class PortTarget implements IMessageTarget {
         this.router.ondeadletter = (data: MessageEvent) => this.ondeadletter(data);
         this.port.onmessage = (e: MessageEvent) => { this.router.route(e); };
     }
-    private checkIsMessage(type: string) {
-        return type === MessagingTypes[0];
-    }
     public makeMessage(message: IBrokerMessage) {
-        if (this.checkIsMessage(message.envelope.type)) {
+        if (message.envelope.type === MessagingTypes[0]) {
             if (message.envelope.bare) {
                 this.port.postMessage(message.data, message.transfer);
             } else {
@@ -243,11 +236,8 @@ export class FrameTarget implements IMessageTarget {
         this.router.ondeadletter = (data: MessageEvent) => this.ondeadletter(data);
         this.router.onerror = (e: ErrorEvent) => this.onerror(e);
     }
-    private checkIsMessage(type: string) {
-        return type === MessagingTypes[0];
-    }
     public makeMessage(message: IBrokerMessage) {
-        if (this.checkIsMessage(message.envelope.type)) {
+        if (message.envelope.type === MessagingTypes[0]) {
             if (message.envelope.origin) {
                 if (message.envelope.bare) {
                     this.frame.postMessage(message.data, message.envelope.origin, message.transfer);

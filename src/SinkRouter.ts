@@ -57,9 +57,9 @@ export class SinkRouter implements Listener<SinkMessages> {
      * @param status Message with status
      */
     private handleBroker(status: IAttachMessage) {
-        if (status.envelope.category === MessagingCategories[6]) {
+        if (status.envelope.category === MessagingCategories[4]) {
             this.broker.attachTarget(status.target);
-        } else if (status.envelope.category === MessagingCategories[7]) {
+        } else if (status.envelope.category === MessagingCategories[5]) {
             this.broker.disposeTarget();
         } else {
             throw new Error("Wrong category");

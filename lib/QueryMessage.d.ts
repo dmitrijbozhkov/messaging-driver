@@ -63,12 +63,7 @@ export declare class ChooseCategory {
      * Queries messages with progress callback
      * @returns Returns stream of messages with progress callback
     */
-    Progress(): Stream<IBrokerMessage>;
-    /**
-     * Queries messages with cancel callback
-     * @returns Returns messages with cancel callback
-     */
-    Cancel(): Stream<IBrokerMessage>;
+    Status(): Stream<IBrokerMessage>;
     /**
      * Queries all messages
      * @returns Returns stream of messages

@@ -92,15 +92,8 @@ export class ChooseCategory {
      * Queries messages with progress callback
      * @returns Returns stream of messages with progress callback
     */
-    public Progress() {
-        return this.context.filter((m: IBrokerMessage) => { return m.envelope.category === MessagingCategories[4]; });
-    }
-    /**
-     * Queries messages with cancel callback
-     * @returns Returns messages with cancel callback
-     */
-    public Cancel() {
-        return this.context.filter((m: IBrokerMessage) => m.envelope.category === MessagingCategories[5]);
+    public Status() {
+        return this.context.filter((m: IBrokerMessage) => { return m.envelope.category === MessagingCategories[3]; });
     }
     /**
      * Queries all messages

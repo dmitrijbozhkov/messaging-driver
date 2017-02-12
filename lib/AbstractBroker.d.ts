@@ -10,7 +10,7 @@ export interface IEnvelope {
     type: string;
     /** Specifies the message identifier */
     name: string;
-    /** Specifies if progress or cancellation callback required */
+    /** Specifies message attributes */
     category?: string;
     /** If true passes all that is in data send to target */
     bare?: boolean;
@@ -44,15 +44,9 @@ export interface IBrokerMessage extends IMessage {
 /**
  * Message with callback that sends progress data to sender
  */
-export interface IProgressMessage extends IMessage {
+export interface IStatusMessage extends IMessage {
     /** Progress callback used to notidy sender */
-    progress: StatusCallback;
-}
-/**
- * Message with cancellation callback to notify target
- */
-export interface ICancelMessage extends IMessage {
-    cancel: StatusCallback;
+    status: StatusCallback;
 }
 /**
  * Message used to publish port for MessageChannel
@@ -87,20 +81,16 @@ export declare enum MessagingTypes {
 export declare enum MessagingCategories {
     /** Specifies that message just sending data */
     data = 0,
-    /** Attaches progress callback to message */
-    progress = 1,
-    /** Attaches cancel callback to message */
-    cancel = 2,
+    /** Attaches notify callback to message */
+    status = 1,
     /** Specifies the error type message */
-    error = 3,
-    /** Message from progress callback */
-    progressCallback = 4,
+    error = 2,
+    /** Message from notify callback */
+    statusCallback = 3,
     /** Message from cancel callback */
-    cancelCallback = 5,
-    /** Attaches target to IBroker */
-    attach = 6,
+    attach = 4,
     /** Disposes target of IBroker */
-    dispose = 7,
+    dispose = 5,
 }
 /**
  * Actions from IBroker target

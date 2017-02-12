@@ -104,8 +104,6 @@ export declare class WorkerTarget implements IMessageTarget {
     private router;
     /** Sets worker and router */
     constructor(worker: Worker, router: ITargetRouter);
-    /** Checks if incoming action is message */
-    private checkIsMessage(type);
     makeMessage(message: IBrokerMessage): void;
     makePublish(message: IPortMessage): void;
     dispose(): void;
@@ -124,7 +122,6 @@ export declare class PortTarget implements IMessageTarget {
     /** Router that will route messages from target */
     private router;
     constructor(port: MessagePort, router: ITargetRouter);
-    private checkIsMessage(type);
     makeMessage(message: IBrokerMessage): void;
     makePublish(message: IPortMessage): void;
     dispose(): void;
@@ -143,7 +140,6 @@ export declare class FrameTarget implements IMessageTarget {
     /** Router that will route messages from target */
     private router;
     constructor(frame: Window, router: ITargetRouter);
-    private checkIsMessage(type);
     makeMessage(message: IBrokerMessage): void;
     makePublish(message: IPortMessage): void;
     dispose(): void;

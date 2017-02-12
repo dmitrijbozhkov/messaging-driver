@@ -1,4 +1,4 @@
-import {IBrokerMessage, MessagingTypes, AbstractMessageProducer, IPortMessage, MessagingCategories, IProgressMessage, ICancelMessage, LifeCycleEvents, Transferable} from "./AbstractBroker";
+import {IBrokerMessage, MessagingTypes, AbstractMessageProducer, IPortMessage, MessagingCategories, IStatusMessage, LifeCycleEvents, Transferable} from "./AbstractBroker";
 import {Producer, Listener, Stream} from "xstream";
 import {WorkerTarget, PortTarget, TargetRoute, IMessageTarget} from "./MessageTargets";
 import {WorkerMock} from "./WorkerMock";
@@ -100,9 +100,7 @@ export class MessageBroker implements IBroker {
     }
     private messageHandler(message: IBrokerMessage) {
         if (message.envelope.category === MessagingCategories[1]) {
-            (message as IProgressMessage).progress = this.reportProgress(message.envelope.name);
-        } else if (message.envelope.category === MessagingCategories[2]) {
-            (message as ICancelMessage).cancel = this.reportCancel(message.envelope.name);
+            (message as IStatusMessage).status = this.reportStatus(message.envelope.name);
         }
         this.MessageProducers.forEach((producer) => {
             if (producer.name === message.envelope.name) {
@@ -110,28 +108,13 @@ export class MessageBroker implements IBroker {
             }
         });
     }
-    private reportProgress(name: string) {
+    private reportStatus(name: string) {
         return (status: any) => {
             let message: IBrokerMessage = {
             envelope: {
                 type: MessagingTypes[0],
                 name: name,
-                category: MessagingCategories[4]
-            },
-            data: {
-                status: status
-            }
-            };
-            this.sendMessage(message as any);
-        };
-    }
-    private reportCancel(name: string) {
-        return (status: any) => {
-            let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: name,
-                category: MessagingCategories[5]
+                category: MessagingCategories[3]
             },
             data: {
                 status: status

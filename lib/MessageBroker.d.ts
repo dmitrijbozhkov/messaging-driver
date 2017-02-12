@@ -80,8 +80,7 @@ export declare class MessageBroker implements IBroker {
     private PortBrokers;
     constructor();
     private messageHandler(message);
-    private reportProgress(name);
-    private reportCancel(name);
+    private reportStatus(name);
     sendMessage(message: IBrokerMessage): void;
     sendPublish(publish: IPortMessage): void;
     private findBroker(name);

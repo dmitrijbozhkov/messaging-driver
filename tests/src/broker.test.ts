@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import {IBrokerMessage, MessagingTypes, MessagingCategories, IProgressMessage, ICancelMessage, LifeCycleEvents, IPortMessage} from "../../lib/AbstractBroker";
+import {IBrokerMessage, MessagingTypes, MessagingCategories, IStatusMessage, LifeCycleEvents, IPortMessage} from "../../lib/AbstractBroker";
 import {MessageBroker, NotifyProducer, IBroker} from "../../lib/MessageBroker";
 import {WorkerMock, MessageEventMock, ErrorEventMock} from "../../lib/WorkerMock";
 import {WorkerTarget, TargetRoute} from "../../lib/MessageTargets";
@@ -109,12 +109,12 @@ describe("MessageBroker tests", () => {
         worker.dispatchEvent(evt as any);
         channel.port2.postMessage(message);
     });
-    it("Messages with category 'progress' should get a progress callback", () => {
+    it("Messages with category 'notify' should get a progress callback", () => {
         message.envelope.category = MessagingCategories[1];
         let evt = new MessageEventMock("message", {data: message});
         let producer = broker.attachMessage("task");
         let event$ = producer.addListener({
-            next: (m: IProgressMessage) => { assert.deepEqual(typeof m.progress, "function"); },
+            next: (m: IStatusMessage) => { assert.deepEqual(typeof m.status, "function"); },
             complete: () => {},
             error: () => {}
         });
@@ -125,39 +125,13 @@ describe("MessageBroker tests", () => {
         let evt = new MessageEventMock("message", {data: message});
         let producer = broker.attachMessage("task");
         let event$ = producer.addListener({
-            next: (m: IProgressMessage) => { m.progress("proceding"); },
+            next: (m: IStatusMessage) => { m.status("proceding"); },
             complete: () => {},
             error: () => {}
         });
         worker.onposted = (e: MessageEvent, ports: MessagePort[]) => {
             assert.deepEqual(e.data.data.status, "proceding");
-            assert.deepEqual(e.data.envelope.category, MessagingCategories[4]);
-        };
-        worker.dispatchEvent(evt as any);
-    });
-    it("Messages with category 'cancel' should get a cancel callback", () => {
-        message.envelope.category = MessagingCategories[2];
-        let evt = new MessageEventMock("message", {data: message});
-        let producer = broker.attachMessage("task");
-        let event$ = producer.addListener({
-            next: (m: ICancelMessage) => { assert.deepEqual(typeof m.cancel, "function"); },
-            complete: () => {},
-            error: () => {}
-        });
-        worker.dispatchEvent(evt as any);
-    });
-    it("cancel callback should post message to target with category cancaelCallback", () => {
-        message.envelope.category = MessagingCategories[2];
-        let evt = new MessageEventMock("message", {data: message});
-        let producer = broker.attachMessage("task");
-        let event$ = producer.addListener({
-            next: (m: ICancelMessage) => { m.cancel("proceding"); },
-            complete: () => {},
-            error: () => {}
-        });
-        worker.onposted = (e: MessageEvent, ports: MessagePort[]) => {
-            assert.deepEqual(e.data.data.status, "proceding");
-            assert.deepEqual(e.data.envelope.category, MessagingCategories[5]);
+            assert.deepEqual(e.data.envelope.category, MessagingCategories[3]);
         };
         worker.dispatchEvent(evt as any);
     });
