@@ -34,7 +34,7 @@ export class SubscribeChooseType {
      * Queries DeadLetters of the target
      * @returns Stream of DeadLetters
      */
-    public DeadLetters() {
+    public DeadLetters(): any {
         let stream = this.context.attachDeadLetter();
         return stream;
     }
@@ -42,7 +42,7 @@ export class SubscribeChooseType {
      * Queries LifeCycle events of target
      * @returns Stream of lifecycle events
      */
-    public LifeCycle() {
+    public LifeCycle(): any {
         let stream = this.context.attachLifeCycle();
         return stream;
     }
@@ -62,7 +62,7 @@ export class ChooseType extends SubscribeChooseType {
      * Queries error events of the target
      * @returns Returns stream of ErrorEvents
      */
-    public Errors() {
+    public Errors(): any {
         let stream = this.eContext.attachError();
         return stream;
     }
@@ -81,7 +81,7 @@ export class ChooseCategory {
      * Queries messages with data
      * @returns Returns stream of data messages
     */
-    public Data() {
+    public Data(): any {
         let takeMessages = (m: IBrokerMessage) => {
             let c = m.envelope.category;
             return c === MessagingCategories[0] || c === MessagingCategories[1] || c === MessagingCategories[2] || c === MessagingCategories[3];
@@ -92,14 +92,14 @@ export class ChooseCategory {
      * Queries messages with progress callback
      * @returns Returns stream of messages with progress callback
     */
-    public Status() {
+    public Status(): any {
         return this.context.filter((m: IBrokerMessage) => { return m.envelope.category === MessagingCategories[3]; });
     }
     /**
      * Queries all messages
      * @returns Returns stream of messages
      */
-    public All() {
+    public All(): any {
         return this.context;
     }
 }

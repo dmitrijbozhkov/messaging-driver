@@ -15,7 +15,11 @@ export type SinkMessages = IBrokerMessage | IPortMessage | IAttachMessage;
 export function makeMessagingDriver(broker: IBroker) {
     return (source: Stream<SinkMessages>) => {
         let routeSink = new SinkRouter(broker);
-        source.addListener(routeSink);
+        try {
+            source.addListener(routeSink);
+        } catch (e) {
+            (source as any).subscribe(routeSink);
+        }
         return new ChooseType(broker);
     };
 }
