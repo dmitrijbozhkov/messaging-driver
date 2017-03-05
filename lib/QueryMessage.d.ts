@@ -25,12 +25,12 @@ export declare class SubscribeChooseType {
      * Queries DeadLetters of the target
      * @returns Stream of DeadLetters
      */
-    DeadLetters(): Stream<MessageEvent>;
+    DeadLetters(): any;
     /**
      * Queries LifeCycle events of target
      * @returns Stream of lifecycle events
      */
-    LifeCycle(): Stream<string>;
+    LifeCycle(): any;
 }
 /**
  * Class for querying target messages
@@ -44,7 +44,7 @@ export declare class ChooseType extends SubscribeChooseType {
      * Queries error events of the target
      * @returns Returns stream of ErrorEvents
      */
-    Errors(): Stream<ErrorEvent>;
+    Errors(): any;
 }
 /**
  * Class for querying category of the message
@@ -58,15 +58,15 @@ export declare class ChooseCategory {
      * Queries messages with data
      * @returns Returns stream of data messages
     */
-    Data(): Stream<IBrokerMessage>;
+    Data(): any;
     /**
      * Queries messages with progress callback
      * @returns Returns stream of messages with progress callback
     */
-    Status(): Stream<IBrokerMessage>;
+    Status(): any;
     /**
      * Queries all messages
      * @returns Returns stream of messages
      */
-    All(): Stream<IBrokerMessage>;
+    All(): any;
 }
