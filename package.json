@@ -10,7 +10,7 @@
     "watch-all": "start npm run watch-lib && npm run watch-test",
     "build-lib": "tsc -p app.tsconfig.json",
     "build-test": "webpack --cache --display-error-details",
-    "build-docs":  "typedoc --tsconfig ./app.tsconfig.json --out ./docs/ --theme minimal --mode modules --readme ./docs.readme.md",
+    "build-docs": "typedoc --tsconfig ./app.tsconfig.json --out ./docs/ --theme minimal --mode modules --readme ./docs.readme.md",
     "build-all": "npm run build-lib && npm run build-test",
     "test": "mocha-phantomjs ./tests/runner.html"
   },
@@ -27,6 +27,7 @@
   ],
   "author": "Dmitrij Bozhkov",
   "dependencies": {
+    "@cycle/run": "^1.0.0",
     "xstream": "^5.2.0"
   },
   "devDependencies": {

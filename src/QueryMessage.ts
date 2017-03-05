@@ -2,6 +2,8 @@ import { Stream } from "xstream";
 import { MessageBroker, NotifyProducer } from "./MessageBroker";
 import { IBroker } from "./MessageBroker";
 import { IBrokerMessage, MessagingCategories } from "./AbstractBroker";
+import { adapt } from "@cycle/run/lib/adapt";
+
 /**
  * Class for querying messages from port broker
  * @constructor Takes port broker
@@ -36,7 +38,7 @@ export class SubscribeChooseType {
      */
     public DeadLetters(): any {
         let stream = this.context.attachDeadLetter();
-        return stream;
+        return adapt(stream as any);
     }
     /**
      * Queries LifeCycle events of target
@@ -44,7 +46,7 @@ export class SubscribeChooseType {
      */
     public LifeCycle(): any {
         let stream = this.context.attachLifeCycle();
-        return stream;
+        return adapt(stream as any);
     }
 }
 /** 
@@ -64,7 +66,7 @@ export class ChooseType extends SubscribeChooseType {
      */
     public Errors(): any {
         let stream = this.eContext.attachError();
-        return stream;
+        return adapt(stream as any);
     }
 }
 /**
@@ -86,20 +88,20 @@ export class ChooseCategory {
             let c = m.envelope.category;
             return c === MessagingCategories[0] || c === MessagingCategories[1] || c === MessagingCategories[2] || c === MessagingCategories[3];
         };
-        return this.context.filter(takeMessages);
+        return adapt(this.context.filter(takeMessages) as any);
     }
     /**
      * Queries messages with progress callback
      * @returns Returns stream of messages with progress callback
     */
     public Status(): any {
-        return this.context.filter((m: IBrokerMessage) => { return m.envelope.category === MessagingCategories[3]; });
+        return adapt(this.context.filter((m: IBrokerMessage) => { return m.envelope.category === MessagingCategories[3]; }) as any);
     }
     /**
      * Queries all messages
      * @returns Returns stream of messages
      */
     public All(): any {
-        return this.context;
+        return adapt(this.context as any);
     }
 }
