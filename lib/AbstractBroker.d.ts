@@ -4,8 +4,6 @@ import { IMessageTarget } from "./MessageTargets";
  * Mesage envelope interface used for message routing
  */
 export interface IEnvelope {
-    /** Path to targets port */
-    target?: string[];
     /** Specifies the type of the message */
     type: string;
     /** Specifies the message identifier */
@@ -68,12 +66,8 @@ export interface IAttachMessage extends IMessage {
 export declare enum MessagingTypes {
     /** Just sends message to target */
     message = 0,
-    /** Publishes port to target */
-    publish = 1,
-    /** Subscribes to port */
-    subscribe = 2,
     /** MessageBroker target managing messages */
-    broker = 3,
+    broker = 1,
 }
 /**
  * Categories of messages that determine message routing

@@ -1,4 +1,4 @@
-import { IBrokerMessage, AbstractMessageProducer, IPortMessage } from "./AbstractBroker";
+import { IBrokerMessage, AbstractMessageProducer } from "./AbstractBroker";
 import { Listener, Stream } from "xstream";
 import { IMessageTarget } from "./MessageTargets";
 /** Passes messages to all the listeners */
@@ -16,22 +16,6 @@ export interface IBroker {
      * @param message Message that will be send to message target or port
      */
     sendMessage: (message: IBrokerMessage) => void;
-    /**
-     * Publishes message port that will be send to target
-     * @param publish Message with port
-     */
-    sendPublish: (publish: IBrokerMessage) => void;
-    /**
-     * Handles subscriptions on ports published by target
-     * @param name Name of the published port
-     */
-    subscribeHandler: (name: string) => IBroker;
-    /**
-     * Handles port publishes from target
-     * @param publish Message that specifies how port will be handled
-     * @param port Port that will be published
-     */
-    publishHandler: (publish: IBrokerMessage, port: MessagePort) => void;
     /**
      * Attaches object that implements IMessageTarget to broker
      * @param target Message target that broker will operate upon
@@ -76,16 +60,10 @@ export declare class MessageBroker implements IBroker {
     private DeadLetterProducer;
     /** Producer that will notify listeners on target initialized or disposed */
     private LifeCycleProducer;
-    /** Brokers that manage targets ports */
-    private PortBrokers;
     constructor();
     private messageHandler(message);
     private reportStatus(name);
     sendMessage(message: IBrokerMessage): void;
-    sendPublish(publish: IPortMessage): void;
-    private findBroker(name);
-    publishHandler(publish: IBrokerMessage, port: MessagePort): void;
-    subscribeHandler(name: string): IBroker;
     attachTarget(target: IMessageTarget): void;
     disposeTarget(): void;
     private findProducers(name);

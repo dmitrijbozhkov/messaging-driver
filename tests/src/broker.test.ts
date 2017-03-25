@@ -64,51 +64,6 @@ describe("MessageBroker tests", () => {
         });
         worker.dispatchEvent(errEvent as any);
     });
-    it("subscribeHandler() should return MessageBroker that on attachMessage() returns producer that triggers on every message published by MessagePort with name 'test'", () => {
-        let channel = new MessageChannel();
-        let name = "test";
-        let publishMessage: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: name,
-                category: MessagingCategories[0]
-            },
-            data: "data"
-        };
-        let subscription = broker.subscribeHandler(name);
-        let producer = subscription.attachMessage("task");
-        let event$ = producer.addListener({
-            next: (m: IBrokerMessage) => { assert.deepEqual(m.data, message.data); },
-            complete: () => {},
-            error: () => {}
-        });
-        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
-        worker.dispatchEvent(evt as any);
-        channel.port2.postMessage(message);
-    });
-    it("subscribeHandler() should return IBroker that on attachDeadLetter() returns producer that triggers on every bad message published by MessagePort", () => {
-        let channel = new MessageChannel();
-        let name = "test";
-        delete message.envelope;
-        let publishMessage: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: name,
-                category: MessagingCategories[0]
-            },
-            data: "data"
-        };
-        let subscription: IBroker = broker.subscribeHandler(name);
-        let producer = subscription.attachDeadLetter();
-        let event$ = producer.addListener({
-            next: (m: MessageEvent) => { assert.deepEqual(m.data.data, message.data); },
-            complete: () => {},
-            error: () => {}
-        });
-        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
-        worker.dispatchEvent(evt as any);
-        channel.port2.postMessage(message);
-    });
     it("Messages with category 'notify' should get a progress callback", () => {
         message.envelope.category = MessagingCategories[1];
         let evt = new MessageEventMock("message", {data: message});
@@ -139,64 +94,11 @@ describe("MessageBroker tests", () => {
         worker.onposted = (m: MessageEvent, ports: MessagePort[]) => assert.deepEqual(m.data.data, "data");
         broker.sendMessage(message as any);
     });
-    it("sendMessage() should post message to targets port if target has it target name and PortBroker target", () => {
-        let channel = new MessageChannel();
-        let name = "test";
-        let publishMessage: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: name,
-                category: MessagingCategories[0]
-            },
-            data: "data"
-        };
-        let subscription = broker.subscribeHandler(name);
-        channel.port2.onmessage = (m: MessageEvent) => { assert.deepEqual(m.data.data, "data"); };
-        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
-        worker.dispatchEvent(evt as any);
-        (message.envelope as any).target = [name];
-        broker.sendMessage(message as any);
-    });
     it("sendMessage() should throw error if specified broker target not found", () => {
         (message.envelope as any).target = ["nope"];
         assert.throws(() => {
             broker.sendMessage(message as any);
         });
-    });
-    it("sendPublish() should post publish to target", () => {
-        let port = new MessageChannel().port1;
-        worker.onposted = (m: MessageEvent, ports: MessagePort[]) => {
-            assert.deepEqual(ports[0], port);
-            assert.deepEqual(m.data.data, "data");
-        };
-        let publish = message;
-        (publish as IPortMessage).port = port;
-        publish.envelope.type = MessagingTypes[1];
-        broker.sendPublish(publish as any);
-    });
-    it("sendPublish() should post publish to targets port if target has it target name and PortBroker target", () => {
-        let channel = new MessageChannel();
-        let channelP = new MessageChannel();
-        let name = "test";
-        let publishMessage: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: name,
-                category: MessagingCategories[0]
-            },
-            data: "data"
-        };
-        let subscription = broker.subscribeHandler(name);
-        channel.port2.onmessage = (m: MessageEvent) => {
-            assert.deepEqual(m.data.data, "data");
-            assert.deepEqual(m.ports[0], channelP.port1);
-        };
-        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
-        worker.dispatchEvent(evt as any);
-        (message.envelope as any).target = [name];
-        (message as any).port = channelP.port1;
-        message.envelope.type = MessagingTypes[1];
-        broker.sendPublish(message as any);
     });
     it("attachLifeCycle() should return producer which triggers on attachTarget() with message initialized", () => {
         let producer = broker.attachLifeCycle();

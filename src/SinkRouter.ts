@@ -18,15 +18,10 @@ export class SinkRouter implements Listener<SinkMessages> {
                 this.handleMessage(m);
                 break;
             case MessagingTypes[1]:
-                this.handlePublish(m as any);
-                break;
-            case MessagingTypes[2]:
-                this.handleSubscription(m as any);
-                break;
-            case MessagingTypes[3]:
                 this.handleBroker(m as any);
                 break;
             default:
+                throw new Error("No such message type");
         }
     }
     public error(e: any) {}
@@ -37,20 +32,6 @@ export class SinkRouter implements Listener<SinkMessages> {
      */
     private handleMessage(message: IBrokerMessage) {
         this.broker.sendMessage(message);
-    }
-    /**
-     * Handles publish messages
-     * @param publish Publish message that will send port
-     */
-    private handlePublish(publish: IPortMessage) {
-        this.broker.sendPublish(publish);
-    }
-    /**
-     * Handles subscription to a port
-     * @param subscribe Message with port to subscribe to
-     */
-    private handleSubscription(subscribe: IPortMessage) {
-        this.broker.publishHandler(subscribe, subscribe.port);
     }
     /**
      * Handles broker lifecycle messages

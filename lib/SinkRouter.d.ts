@@ -18,16 +18,6 @@ export declare class SinkRouter implements Listener<SinkMessages> {
      */
     private handleMessage(message);
     /**
-     * Handles publish messages
-     * @param publish Publish message that will send port
-     */
-    private handlePublish(publish);
-    /**
-     * Handles subscription to a port
-     * @param subscribe Message with port to subscribe to
-     */
-    private handleSubscription(subscribe);
-    /**
      * Handles broker lifecycle messages
      * @param status Message with status
      */

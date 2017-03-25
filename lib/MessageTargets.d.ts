@@ -1,4 +1,4 @@
-import { IBrokerMessage, IPortMessage } from "./AbstractBroker";
+import { IBrokerMessage } from "./AbstractBroker";
 /** Standard interface of class that handles events from target */
 export interface IMessageHandler {
     /**
@@ -16,12 +16,6 @@ export interface IMessageHandler {
      * @param message Message from target that was routed
      */
     onmessage: (message: IBrokerMessage) => void;
-    /**
-     * Publishes MessageChannel port to broker
-     * @param publish Publishing message that specifies how port will be handled
-     * @param port Port that IBroker subscribe to
-     */
-    onpublish: (publish: IBrokerMessage, port: MessagePort) => void;
 }
 /**
  * Interface for class that sends messages to target
@@ -32,11 +26,6 @@ export interface IMessageTarget extends IMessageHandler {
      * @param message Message that will be send
      */
     makeMessage: (message: IBrokerMessage) => void;
-    /**
-     * Sends MessageChannel port to target
-     * @param message Message that contains port and parameters how to handle it
-     */
-    makePublish: (message: IPortMessage) => void;
     /** Disposes message target */
     dispose: () => void;
 }
@@ -62,12 +51,6 @@ export declare class TargetRoute implements ITargetRouter {
      * @param message Message from target that was routed
      */
     onmessage: (message: IBrokerMessage) => void;
-    /**
-     * Publishes MessageChannel port to broker
-     * @param publish Publishing message that specifies how port will be handled
-     * @param port Port that IBroker subscribe to
-     */
-    onpublish: (publish: IBrokerMessage, port: MessagePort) => void;
     /**
      * Events that wasn't routed
      * @param data MessageEvent that doesn't have proper data field
@@ -105,10 +88,8 @@ export declare class WorkerTarget implements IMessageTarget {
     /** Sets worker and router */
     constructor(worker: Worker, router: ITargetRouter);
     makeMessage(message: IBrokerMessage): void;
-    makePublish(message: IPortMessage): void;
     dispose(): void;
     onmessage: (message: IBrokerMessage) => void;
-    onpublish: (publish: IBrokerMessage, port: MessagePort) => void;
     onerror: (error: ErrorEvent) => void;
     ondeadletter: (data: MessageEvent) => void;
 }
@@ -123,10 +104,8 @@ export declare class PortTarget implements IMessageTarget {
     private router;
     constructor(port: MessagePort, router: ITargetRouter);
     makeMessage(message: IBrokerMessage): void;
-    makePublish(message: IPortMessage): void;
     dispose(): void;
     onmessage: (message: IBrokerMessage) => void;
-    onpublish: (publish: IBrokerMessage, port: MessagePort) => void;
     ondeadletter: (data: MessageEvent) => void;
     onerror: (error: ErrorEvent) => void;
 }
@@ -141,10 +120,8 @@ export declare class FrameTarget implements IMessageTarget {
     private router;
     constructor(frame: Window, router: ITargetRouter);
     makeMessage(message: IBrokerMessage): void;
-    makePublish(message: IPortMessage): void;
     dispose(): void;
     onmessage: (message: IBrokerMessage) => void;
-    onpublish: (publish: IBrokerMessage, port: MessagePort) => void;
     ondeadletter: (data: MessageEvent) => void;
     onerror: (error: ErrorEvent) => void;
 }

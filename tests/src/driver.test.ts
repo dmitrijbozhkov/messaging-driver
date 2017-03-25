@@ -4,7 +4,7 @@ import { makeMessagingDriver } from "../../lib/makeMessagingDriver";
 import { FrameTarget, WorkerTarget, PortTarget, TargetRoute } from "../../lib/MessageTargets";
 import { FrameMock, WorkerMock, MessageEventMock, ErrorEventMock } from "../../lib/WorkerMock";
 import { MessageBroker, NotifyProducer, IBroker } from "../../lib/MessageBroker";
-import {  ChooseCategory, ChooseType, SubscribeChooseType } from "../../lib/QueryMessage";
+import {  ChooseCategory, ChooseType } from "../../lib/QueryMessage";
 import { SinkRouter } from "../../lib/SinkRouter";
 import { Stream } from "xstream";
 describe("makeMessagingDriver source tests", () => {
@@ -204,217 +204,6 @@ describe("makeMessagingDriver source tests", () => {
         });
         broker.attachTarget(workerTarget);
     });
-    it("source.Subscribe() should return SubscribeChooseType", () => {
-        let subscription = source.Subscribe("sub");
-        assert.ok(subscription instanceof SubscribeChooseType);
-    });
-    it("source.Subscribe().Messages().Data() should return stream of IBrokerMessage with category data", () => {
-        let channel = new MessageChannel();
-        let name = "task";
-        let data = "data";
-        let sub = "sub";
-        broker.attachTarget(workerTarget);
-        let data$ = source.Subscribe(sub).Messages(name).Data();
-        data$.addListener({
-            next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
-            complete: () => {},
-            error: () => {}
-        });
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: name,
-                category: MessagingCategories[0]
-            },
-            data: data
-        };
-        let publishMessage: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: sub,
-                category: MessagingCategories[0]
-            },
-            data: "data"
-        };
-        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
-        worker.dispatchEvent(evt as any);
-        channel.port2.postMessage(message);
-    });
-    it("source.Subscribe().Messages().Data() should return stream of IBrokerMessage with category progress", () => {
-        let channel = new MessageChannel();
-        let name = "task";
-        let data = "data";
-        let sub = "sub";
-        broker.attachTarget(workerTarget);
-        let data$ = source.Subscribe(sub).Messages(name).Data();
-        data$.addListener({
-            next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
-            complete: () => {},
-            error: () => {}
-        });
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: name,
-                category: MessagingCategories[1]
-            },
-            data: data
-        };
-        let publishMessage: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: sub,
-                category: MessagingCategories[0]
-            },
-            data: "data"
-        };
-        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
-        worker.dispatchEvent(evt as any);
-        channel.port2.postMessage(message);
-    });
-    it("source.Subscribe().Messages().Data() should return stream of IBrokerMessage with category cancel", () => {
-        let channel = new MessageChannel();
-        let name = "task";
-        let data = "data";
-        let sub = "sub";
-        broker.attachTarget(workerTarget);
-        let data$ = source.Subscribe(sub).Messages(name).Data();
-        data$.addListener({
-            next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
-            complete: () => {},
-            error: () => {}
-        });
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: name,
-                category: MessagingCategories[2]
-            },
-            data: data
-        };
-        let publishMessage: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: sub,
-                category: MessagingCategories[0]
-            },
-            data: "data"
-        };
-        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
-        worker.dispatchEvent(evt as any);
-        channel.port2.postMessage(message);
-    });
-    it("source.Subscribe().Messages().Data() should return stream of IBrokerMessage with category error", () => {
-        let channel = new MessageChannel();
-        let name = "task";
-        let data = "data";
-        let sub = "sub";
-        broker.attachTarget(workerTarget);
-        let data$ = source.Subscribe(sub).Messages(name).Data();
-        data$.addListener({
-            next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
-            complete: () => {},
-            error: () => {}
-        });
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: name,
-                category: MessagingCategories[3]
-            },
-            data: data
-        };
-        let publishMessage: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: sub,
-                category: MessagingCategories[0]
-            },
-            data: "data"
-        };
-        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
-        worker.dispatchEvent(evt as any);
-        channel.port2.postMessage(message);
-    });
-    it("source.Subscribe().Messages().Status() should return stream of IBrokerMessage with category progressCallback", () => {
-        let channel = new MessageChannel();
-        let name = "task";
-        let data = "data";
-        let sub = "sub";
-        broker.attachTarget(workerTarget);
-        let data$ = source.Subscribe(sub).Messages(name).Status();
-        data$.addListener({
-            next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
-            complete: () => {},
-            error: () => {}
-        });
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: name,
-                category: MessagingCategories[3]
-            },
-            data: data
-        };
-        let publishMessage: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: sub,
-                category: MessagingCategories[0]
-            },
-            data: "data"
-        };
-        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
-        worker.dispatchEvent(evt as any);
-        channel.port2.postMessage(message);
-    });
-    it("source.Subscribe().DeadLetters() should return stream of MessageEvent", () => {
-        let channel = new MessageChannel();
-        let data = "data";
-        let sub = "sub";
-        broker.attachTarget(workerTarget);
-        let data$ = source.Subscribe(sub).DeadLetters();
-        data$.addListener({
-            next: (m: MessageEvent) => { assert.deepEqual(m.data.data, data); },
-            complete: () => {},
-            error: () => {}
-        });
-        let message = {
-            data: data
-        };
-        let publishMessage: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: sub,
-                category: MessagingCategories[0]
-            },
-            data: "data"
-        };
-        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
-        worker.dispatchEvent(evt as any);
-        channel.port2.postMessage(message);
-    });
-    it("source.Subscribe().LifeCycle() should return stream of life cycle messages", () => {
-        let channel = new MessageChannel();
-        let sub = "sub";
-        broker.attachTarget(workerTarget);
-        let data$ = source.Subscribe(sub).LifeCycle();
-        data$.addListener({
-            next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[0]); },
-            complete: () => {},
-            error: () => {}
-        });
-        let publishMessage: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: sub,
-                category: MessagingCategories[0]
-            },
-            data: "data"
-        };
-        let evt = new MessageEventMock("message", {data: publishMessage, ports: [channel.port1]});
-        worker.dispatchEvent(evt as any);
-    });
 });
 describe("makeMessagingDriver sink tests", () => {
     let selfWorker: WorkerMock;
@@ -446,76 +235,11 @@ describe("makeMessagingDriver sink tests", () => {
         wWorker.onposted = (m: MessageEvent) => { assert.deepEqual(m.data.data, data); };
         router.next(message);
     });
-    it("Messages with type publish and no target should route IPortMessage to workers MessageBroker.sendPublish()", () => {
-        let data = "data";
-        let channel = new MessageChannel();
-        let message: IPortMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: name,
-                category: MessagingCategories[0]
-            },
-            data: data,
-            port: channel.port1
-        };
-        wWorker.onposted = (m: MessageEvent, ports: MessagePort[]) => {
-            assert.deepEqual(m.data.data, data);
-            assert.deepEqual(ports[0], channel.port1);
-        };
-        router.next(message);
-    });
-    it("Messages with type subscribe and no target should route IPortMessage to workers MessageBroker.publishHandler()", () => {
-        let data = "data";
-        let channel = new MessageChannel();
-        let sub: IPortMessage = {
-            envelope: {
-                type: MessagingTypes[2],
-                name: name,
-                category: MessagingCategories[0]
-            },
-            data: data,
-            port: channel.port1
-        };
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: "mes",
-                category: MessagingCategories[0]
-            },
-            data: data
-        };
-        router.next(sub);
-        let subBroker: IBroker = wBroker.subscribeHandler(name);
-        subBroker.attachMessage("mes").addListener({
-            next: (m: IBrokerMessage) => { assert.deepEqual(m.data, data); },
-            error: () => {},
-            complete: () => {}
-        });
-        channel.port2.postMessage(message);
-    });
-    it("Messages with type broker, target 'worker' and category 'dispose' should route IAttachMessage to 'worker' MessageBroker.disposeTarget()", () => {
-        let data = "data";
-        let message: IAttachMessage = {
-            envelope: {
-                type: MessagingTypes[3],
-                name: name,
-                category: MessagingCategories[5]
-            },
-            data: data,
-            target: null
-        };
-        wBroker.attachLifeCycle().addListener({
-            next: (m: string) => { assert.deepEqual(m, LifeCycleEvents[1]); },
-            error: () => {},
-            complete: () => {}
-        });
-        router.next(message);
-    });
     it("Messages with type broker, target 'worker' and category 'attach' should route IAttachMessage to 'worker' MessageBroker.attachTarget()", () => {
         let data = "data";
         let message: IAttachMessage = {
             envelope: {
-                type: MessagingTypes[3],
+                type: MessagingTypes[1],
                 name: name,
                 category: MessagingCategories[4]
             },
@@ -524,7 +248,7 @@ describe("makeMessagingDriver sink tests", () => {
         };
         let messageDispose: IAttachMessage = {
             envelope: {
-                type: MessagingTypes[3],
+                type: MessagingTypes[1],
                 name: name,
                 category: MessagingCategories[5]
             },

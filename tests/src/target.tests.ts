@@ -21,23 +21,6 @@ describe("TargetRoute tests", () => {
         router.onmessage = (message: IBrokerMessage) => assert.deepEqual(message.data, data);
         router.route(evt as any);
     });
-    it("route() should route publish messages to onpublish", () => {
-        let channel = new MessageChannel();
-        let message: IBrokerMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: "TestPromise",
-                category: MessagingCategories[0]
-            },
-            data: data
-        };
-        let evt = new MessageEventMock("message", {data: message, ports: [channel.port1]});
-        router.onpublish = (message: IBrokerMessage, port: MessagePort) => {
-            assert.deepEqual(message.data, data);
-            assert.deepEqual(port, channel.port1);
-        };
-        router.route(evt as any);
-    });
     it("route() should route messages without envelope to ondeadletter", () => {
         let message = {
             data: data
@@ -190,56 +173,6 @@ describe("WorkerTarget tests", () => {
         worker.onposted = (message) => assert.deepEqual(message.data, data);
         workerTarget.makeMessage(message);
     });
-    it("makePublish() should post publish to worker", () => {
-        let port = new MessageChannel().port1;
-        let message: IPortMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: "TestRequest",
-                category: MessagingCategories[0]
-            },
-            data: data,
-            port: port
-        };
-        worker.onposted = (e: MessageEvent, ports: MessagePort[]) => {
-            assert.deepEqual(e.data.data, data);
-            assert.deepEqual(ports[0], port);
-        };
-        workerTarget.makePublish(message);
-    });
-    it("makePublish() should post all that is in message.data and add port to ports if bare is true", () => {
-        let port = new MessageChannel().port1;
-        let message: IPortMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: "TestPromise",
-                category: MessagingCategories[0],
-                bare: true
-            },
-            data: data,
-            port: port
-        };
-        worker.onposted = (e: MessageEvent, ports: MessagePort[]) => {
-            assert.deepEqual(e.data, data);
-            assert.deepEqual(ports[0], port);
-        };
-        workerTarget.makePublish(message);
-    });
-    it("makePublish() should throw exception if envelope.type equal to message", () => {
-        let port = new MessageChannel().port1;
-        let message: IPortMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: "TestRequest",
-                category: MessagingCategories[0]
-            },
-            data: data,
-            port: port
-        };
-        assert.throws(() => {
-            workerTarget.makePublish(message);
-        });
-    });
 });
 describe("PortTarget tests", () => {
     let channel: MessageChannel;
@@ -313,56 +246,6 @@ describe("PortTarget tests", () => {
         };
         channel.port2.onmessage = (message: MessageEvent) => assert.deepEqual(message.data, data);
         portTarget.makeMessage(message);
-    });
-    it("makePublish() should post publish to port", () => {
-        let port = new MessageChannel().port1;
-        let message: IPortMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: "TestRequest",
-                category: MessagingCategories[0]
-            },
-            data: data,
-            port: port
-        };
-        channel.port2.onmessage = (e: MessageEvent) => {
-            assert.deepEqual(e.data.data, data);
-            assert.deepEqual(e.ports[0], port);
-        };
-        portTarget.makePublish(message);
-    });
-    it("makePublish() should post all that is in message.data and add port to ports if bare is true", () => {
-        let port = new MessageChannel().port1;
-        let message: IPortMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: "TestPromise",
-                category: MessagingCategories[0],
-                bare: true
-            },
-            data: data,
-            port: port
-        };
-        channel.port2.onmessage = (e: MessageEvent) => {
-            assert.deepEqual(e.data, data);
-            assert.deepEqual(e.ports[0], port);
-        };
-        portTarget.makePublish(message);
-    });
-    it("makePublish() should throw exception if envelope.type equal to message", () => {
-        let port = new MessageChannel().port1;
-        let message: IPortMessage = {
-            envelope: {
-                type: MessagingTypes[0],
-                name: "TestRequest",
-                category: MessagingCategories[0]
-            },
-            data: data,
-            port: port
-        };
-        assert.throws(() => {
-            portTarget.makePublish(message);
-        });
     });
 });
 describe("FrameTarget tests", () => {
@@ -451,74 +334,6 @@ describe("FrameTarget tests", () => {
         };
         assert.throws(() => {
             frameTarget.makeMessage(message);
-        });
-    });
-    it("makePublish() should post publish to frame", () => {
-        let port = new MessageChannel().port1;
-        let message: IPortMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: "TestRequest",
-                origin: "www.google.com",
-                category: MessagingCategories[0]
-            },
-            data: data,
-            port: port
-        };
-        frame.onposted = (e: MessageEvent, ports: MessagePort[]) => {
-            assert.deepEqual(e.data.data, data);
-            assert.deepEqual(ports[0], port);
-        };
-        frameTarget.makePublish(message);
-    });
-    it("makePublish() should post all that in message.data if bare is true", () => {
-        let port = new MessageChannel().port1;
-        let message: IPortMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: "TestRequest",
-                origin: "www.google.com",
-                category: MessagingCategories[0],
-                bare: true
-            },
-            data: data,
-            port: port
-        };
-        frame.onposted = (e: MessageEvent, ports: MessagePort[]) => {
-            assert.deepEqual(e.data, data);
-            assert.deepEqual(ports[0], port);
-        };
-        frameTarget.makePublish(message);
-    });
-    it("makePublish() should throw exception if envelope.type equal to message", () => {
-        let port = new MessageChannel().port1;
-        let message: IPortMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: "TestRequest",
-                origin: "www.google.com",
-                category: MessagingCategories[0]
-            },
-            data: data,
-            port: port
-        };
-        assert.throws(() => {
-            frameTarget.makePublish(message);
-        });
-    });
-    it("makePublish() should throw exception if no envelope.origin specified", () => {
-        let port = new MessageChannel().port1;
-        let message: IPortMessage = {
-            envelope: {
-                type: MessagingTypes[1],
-                name: "TestRequest",
-                category: MessagingCategories[0]
-            },
-            data: data,
-            port: port
-        };
-        assert.throws(() => {
-            frameTarget.makePublish(message);
         });
     });
 });

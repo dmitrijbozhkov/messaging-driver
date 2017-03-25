@@ -28,22 +28,6 @@ export interface IBroker {
      */
     sendMessage: (message: IBrokerMessage) => void;
     /**
-     * Publishes message port that will be send to target
-     * @param publish Message with port
-     */
-    sendPublish: (publish: IBrokerMessage) => void;
-    /**
-     * Handles subscriptions on ports published by target
-     * @param name Name of the published port
-     */
-    subscribeHandler: (name: string) => IBroker;
-    /**
-     * Handles port publishes from target
-     * @param publish Message that specifies how port will be handled
-     * @param port Port that will be published
-     */
-    publishHandler: (publish: IBrokerMessage, port: MessagePort) => void;
-    /**
      * Attaches object that implements IMessageTarget to broker
      * @param target Message target that broker will operate upon
      */
@@ -91,8 +75,6 @@ export class MessageBroker implements IBroker {
     private DeadLetterProducer: AbstractMessageProducer<MessageEvent>;
     /** Producer that will notify listeners on target initialized or disposed */
     private LifeCycleProducer: AbstractMessageProducer<string>;
-    /** Brokers that manage targets ports */
-    private PortBrokers: BrokerCollection[] = [];
     constructor() {
         this.ErrorProducer = new NotifyProducer<ErrorEvent>();
         this.DeadLetterProducer = new NotifyProducer<MessageEvent>();
@@ -124,71 +106,7 @@ export class MessageBroker implements IBroker {
         };
     }
     public sendMessage(message: IBrokerMessage) {
-        if (!message.envelope.target) {
-            this.target.makeMessage(message as any);
-        } else if (!message.envelope.target.length) {
-            this.target.makeMessage(message as any);
-        } else {
-            let name = message.envelope.target.splice(0, 1);
-            let broker = this.findBroker(name[0]);
-            if (broker) {
-                (broker.broker as MessageBroker).sendMessage(message);
-            } else {
-                throw new Error("No such broker");
-            }
-        }
-    }
-    public sendPublish(publish: IPortMessage) {
-        if (!publish.envelope.target) {
-            this.target.makePublish(publish as any);
-        } else if (!publish.envelope.target.length) {
-            this.target.makePublish(publish as any);
-        } else {
-            let name = publish.envelope.target.splice(0, 1);
-            let broker = this.findBroker(name[0]);
-            if (broker) {
-                (broker.broker as MessageBroker).sendPublish(publish);
-            } else {
-                throw new Error("No such broker");
-            }
-        }
-    }
-    private findBroker(name: string): BrokerCollection {
-        let broker;
-        let i = 0;
-        for (i = 0; i < this.PortBrokers.length; i += 1) {
-            if (this.PortBrokers[i].name === name) {
-                broker = this.PortBrokers[i];
-                break;
-            }
-        }
-        return broker;
-    }
-    public publishHandler(publish: IBrokerMessage, port: MessagePort) {
-        if (!publish.envelope.name) {
-            throw new Error("Name is empty");
-        }
-        if ((publish as IPortMessage).port) {
-            delete (publish as IPortMessage).port;
-        }
-        let portTarget = new PortTarget(port, new TargetRoute());
-        let broker = this.findBroker(publish.envelope.name);
-        if (!broker) {
-            broker = { broker: new MessageBroker(), name: publish.envelope.name };
-            this.PortBrokers.push(broker);
-        }
-        (broker.broker as MessageBroker).attachTarget(portTarget);
-    }
-    public subscribeHandler(name: string) {
-        if (!name) {
-            throw new Error("Name is empty");
-        }
-        let portBroker = this.findBroker(name);
-        if (!portBroker) {
-            portBroker = { broker: new MessageBroker(), name: name };
-            this.PortBrokers.push(portBroker);
-        }
-        return portBroker.broker;
+        this.target.makeMessage(message as any);
     }
     public attachTarget(target: IMessageTarget) {
         if (this.target) {
@@ -196,7 +114,6 @@ export class MessageBroker implements IBroker {
         }
         this.target = (target as WorkerTarget);
         target.onmessage = (message: IBrokerMessage) => { this.messageHandler(message); };
-        target.onpublish = (publish: IBrokerMessage, port: MessagePort) => this.publishHandler(publish, port);
         target.onerror = (e: ErrorEvent) => this.ErrorProducer.trigger(e);
         target.ondeadletter = (letter: MessageEvent) => this.DeadLetterProducer.trigger(letter);
         this.fireLifeCycleEvent(LifeCycleEvents[0]);
@@ -204,7 +121,6 @@ export class MessageBroker implements IBroker {
     public disposeTarget() {
         this.target.dispose();
         this.target = null;
-        this.PortBrokers = [];
         this.fireLifeCycleEvent(LifeCycleEvents[1]);
     }
     private findProducers(name: string): ProducerCollection<IBrokerMessage> {
