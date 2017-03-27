@@ -20,7 +20,7 @@ export class ChooseType {
      */
     public Errors(): any {
         let stream = this.context.attachError();
-        return adapt(stream as any);
+        return stream;
     }
     /**
      * Queries messages with specified name
@@ -37,7 +37,7 @@ export class ChooseType {
      */
     public DeadLetters(): any {
         let stream = this.context.attachDeadLetter();
-        return adapt(stream as any);
+        return stream;
     }
     /**
      * Queries LifeCycle events of target
@@ -45,7 +45,7 @@ export class ChooseType {
      */
     public LifeCycle(): any {
         let stream = this.context.attachLifeCycle();
-        return adapt(stream as any);
+        return stream;
     }
 }
 /**
@@ -67,20 +67,20 @@ export class ChooseCategory {
             let c = m.envelope.category;
             return c === MessagingCategories[0] || c === MessagingCategories[1] || c === MessagingCategories[2] || c === MessagingCategories[3];
         };
-        return adapt(this.context.filter(takeMessages) as any);
+        return this.context.filter(takeMessages);
     }
     /**
      * Queries messages with progress callback
      * @returns Returns stream of messages with progress callback
     */
     public Status(): any {
-        return adapt(this.context.filter((m: IBrokerMessage) => { return m.envelope.category === MessagingCategories[3]; }) as any);
+        return this.context.filter((m: IBrokerMessage) => { return m.envelope.category === MessagingCategories[3]; });
     }
     /**
      * Queries all messages
      * @returns Returns stream of messages
      */
     public All(): any {
-        return adapt(this.context as any);
+        return this.context;
     }
 }
