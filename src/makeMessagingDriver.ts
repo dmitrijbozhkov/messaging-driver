@@ -16,7 +16,11 @@ export type SinkMessages = IBrokerMessage | IPortMessage | IAttachMessage;
 export function makeMessagingDriver(broker: IBroker) {
     return (source: FantasyObservable, driverName: string) => {
         let routeSink = new SinkRouter(broker);
-        source.subscribe(routeSink);
+        try {
+            (source as any).addListener(routeSink);
+        } catch (e) {
+            source.subscribe(routeSink);
+        }
         return new ChooseType(broker);
     };
 }
