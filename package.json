@@ -27,8 +27,8 @@
   ],
   "author": "Dmitrij Bozhkov",
   "dependencies": {
-    "@cycle/run": "^1.0.0",
-    "xstream": "^5.2.0"
+    "@cycle/run": "^3.1.0",
+    "xstream": "^10.3.0"
   },
   "devDependencies": {
     "@types/mocha": "^2.2.37",
